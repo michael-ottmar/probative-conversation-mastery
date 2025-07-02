@@ -1,9 +1,7 @@
-import { withAuth } from "next-auth/middleware";
+import { auth } from "@/auth";
 
-export default withAuth({
-  pages: {
-    signIn: "/",
-  },
+export default auth((req) => {
+  // req.auth is the session
 });
 
 export const config = {
