@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { CompanyUmbrellaStructure } from '@/components/CompanyUmbrellaStructure';
 import { ProbativeConversationTodos } from '@/components/ProbativeConversationTodos';
 import { Organization, Team, ConversationTodo } from '@/lib/types';
@@ -123,8 +125,24 @@ const mockTodos: ConversationTodo[] = [
 ];
 
 export default function ConversationBuilder({ params }: { params: { id: string } }) {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [selectedTeamId, setSelectedTeamId] = useState<string>('umbrella');
   const selectedTeam = mockTeams.find(t => t.id === selectedTeamId);
+
+  // Redirect if not authenticated
+  if (status === 'unauthenticated') {
+    router.push('/');
+    return null;
+  }
+
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">Loading...</div>
+      </div>
+    );
+  }
 
   const handleTodoClick = (todo: ConversationTodo) => {
     console.log('Todo clicked:', todo);

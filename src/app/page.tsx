@@ -1,6 +1,31 @@
-import Link from 'next/link';
+'use client';
+
+import { signIn, useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function Home() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      router.push('/dashboard');
+    }
+  }, [status, router]);
+
+  const handleSignIn = () => {
+    signIn('google');
+  };
+
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       <div className="container mx-auto px-4 py-16">
@@ -38,12 +63,12 @@ export default function Home() {
             </div>
           </div>
 
-          <Link
-            href="/dashboard"
+          <button
+            onClick={handleSignIn}
             className="inline-flex items-center px-8 py-4 text-lg font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
           >
             Get Started with Google
-          </Link>
+          </button>
 
           <div className="mt-12 text-sm text-gray-500">
             Based on "The Four Conversations" by Blair Enns

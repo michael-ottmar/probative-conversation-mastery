@@ -1,15 +1,33 @@
 'use client';
 
 import { useState } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, Send, User, Bot, Lightbulb } from 'lucide-react';
 import Link from 'next/link';
 import { Message, CoachingNote } from '@/lib/types';
 
 export default function PracticeMode({ params }: { params: { id: string } }) {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [coachingNotes, setCoachingNotes] = useState<CoachingNote[]>([]);
   const [isTyping, setIsTyping] = useState(false);
+
+  // Redirect if not authenticated
+  if (status === 'unauthenticated') {
+    router.push('/');
+    return null;
+  }
+
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">Loading...</div>
+      </div>
+    );
+  }
 
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;

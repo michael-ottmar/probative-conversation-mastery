@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { useSession, signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { CompanyUmbrellaStructure } from '@/components/CompanyUmbrellaStructure';
 import { Organization, Team, ProbativeConversation } from '@/lib/types';
 import { Plus, ArrowRight } from 'lucide-react';
@@ -91,13 +93,29 @@ const mockConversations: ProbativeConversation[] = [
       unifiedThesis: 'True transformation requires coordinated expertise across strategy, operations, and brand'
     },
     sharedWith: [],
-    createdBy: 'john@acme.com',
+    createdBy: 'user@example.com',
     createdAt: new Date()
   }
 ];
 
 export default function Dashboard() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [selectedTeamId, setSelectedTeamId] = useState<string>('umbrella');
+
+  // Redirect if not authenticated
+  if (status === 'unauthenticated') {
+    router.push('/');
+    return null;
+  }
+
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -108,8 +126,11 @@ export default function Dashboard() {
               Probative Conversation Mastery
             </h1>
             <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">john@acme.com</span>
-              <button className="text-sm text-gray-600 hover:text-gray-900">
+              <span className="text-sm text-gray-600">{session?.user?.email}</span>
+              <button 
+                onClick={() => signOut()}
+                className="text-sm text-gray-600 hover:text-gray-900"
+              >
                 Sign Out
               </button>
             </div>
@@ -120,7 +141,7 @@ export default function Dashboard() {
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome back, John
+            Welcome back{session?.user?.name ? `, ${session.user.name.split(' ')[0]}` : ''}
           </h2>
           <p className="text-gray-600">
             Continue mastering the probative conversation across your organization
