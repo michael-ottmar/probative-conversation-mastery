@@ -15,7 +15,7 @@ export default function Home() {
   }, [status, router]);
 
   const handleSignIn = () => {
-    signIn('google');
+    signIn('google', { callbackUrl: '/dashboard' });
   };
 
   if (status === 'loading') {

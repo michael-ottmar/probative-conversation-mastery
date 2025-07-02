@@ -1,17 +1,12 @@
 import { withAuth } from "next-auth/middleware";
-import { NextResponse } from "next/server";
 
-export default withAuth(
-  function middleware(req) {
-    return NextResponse.next();
+export default withAuth({
+  pages: {
+    signIn: "/",
   },
-  {
-    pages: {
-      signIn: "/",
-    },
-  }
-);
+});
 
+// Only protect dashboard and conversation routes
 export const config = {
   matcher: ["/dashboard/:path*", "/conversation/:path*"],
 };
