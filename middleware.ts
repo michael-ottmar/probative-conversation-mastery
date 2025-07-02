@@ -1,8 +1,16 @@
-import { auth } from "@/auth";
+import { withAuth } from "next-auth/middleware";
+import { NextResponse } from "next/server";
 
-export default auth((req) => {
-  // req.auth is the session
-});
+export default withAuth(
+  function middleware(req) {
+    return NextResponse.next();
+  },
+  {
+    pages: {
+      signIn: "/",
+    },
+  }
+);
 
 export const config = {
   matcher: ["/dashboard/:path*", "/conversation/:path*"],
