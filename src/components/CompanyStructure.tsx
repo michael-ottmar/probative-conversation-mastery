@@ -32,7 +32,7 @@ export function CompanyStructure({
   return (
     <div className="bg-white rounded-lg p-6">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">Company Umbrella Structure</h2>
+        <h2 className="text-2xl font-bold text-gray-900">Company Structure</h2>
         <button
           onClick={onTeamAdd}
           className="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors"
@@ -49,14 +49,14 @@ export function CompanyStructure({
           <div className="flex justify-center mb-4">
             <button
               onClick={() => onTeamSelect(rootTeam.id)}
-              className={`px-6 py-4 rounded-lg transition-all ${
+              className={`px-6 py-4 rounded-lg transition-all border-2 ${
                 selectedTeamId === rootTeam.id
-                  ? 'bg-slate-700 text-white ring-4 ring-blue-500'
-                  : 'bg-slate-600 text-white hover:bg-slate-700'
+                  ? 'bg-slate-700 text-white border-slate-700'
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
               }`}
             >
               <div className="font-semibold">{rootTeam.name}</div>
-              <div className="text-sm opacity-90 mt-1">{rootTeam.leaders || 'Orchestration Team'}</div>
+              <div className="text-sm opacity-90 mt-1">{rootTeam.leaders || 'Team leaders'}</div>
               <div className="text-xs mt-2">{rootTeam.progress}% Complete</div>
             </button>
           </div>
@@ -78,15 +78,15 @@ export function CompanyStructure({
                 const deleteBtn = e.currentTarget.querySelector('.delete-btn');
                 if (deleteBtn) deleteBtn.classList.add('opacity-0');
               }}
-              className={`relative px-6 py-4 rounded-lg transition-all ${
+              className={`relative px-6 py-4 rounded-lg transition-all border-2 ${
                 selectedTeamId === team.id
-                  ? 'ring-4 ring-blue-500'
+                  ? ''
                   : 'hover:shadow-md'
               }`}
               style={{ 
                 backgroundColor: selectedTeamId === team.id ? team.color : 'white',
-                color: selectedTeamId === team.id ? 'white' : team.color,
-                borderColor: team.color,
+                color: selectedTeamId === team.id ? 'white' : 'rgb(107, 114, 128)',
+                borderColor: selectedTeamId === team.id ? team.color : 'rgb(209, 213, 219)',
                 borderWidth: '2px',
                 borderStyle: 'solid'
               }}

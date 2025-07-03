@@ -13,9 +13,9 @@ import Link from 'next/link';
 // Default teams with proper leaders format
 const createDefaultTeams = (orgId: string): Team[] => [
   {
-    id: 'umbrella',
+    id: 'team-1',
     organizationId: orgId,
-    name: 'Company Umbrella',
+    name: 'Team 1',
     leaders: 'Leadership Team',
     description: '',
     color: '#1E40AF',
@@ -23,15 +23,37 @@ const createDefaultTeams = (orgId: string): Team[] => [
     isRoot: true,
   },
   {
-    id: 'team-1',
+    id: 'team-2',
     organizationId: orgId,
-    name: 'Team',
+    name: 'Team 2',
     leaders: '',
     description: '',
     color: '#10B981',
     progress: 0,
     isRoot: false,
-    parentId: 'umbrella',
+    parentId: 'team-1',
+  },
+  {
+    id: 'team-3',
+    organizationId: orgId,
+    name: 'Team 3',
+    leaders: '',
+    description: '',
+    color: '#F59E0B',
+    progress: 0,
+    isRoot: false,
+    parentId: 'team-1',
+  },
+  {
+    id: 'team-4',
+    organizationId: orgId,
+    name: 'Team 4',
+    leaders: '',
+    description: '',
+    color: '#8B5CF6',
+    progress: 0,
+    isRoot: false,
+    parentId: 'team-1',
   },
 ];
 
@@ -80,7 +102,7 @@ export default function ConversationBuilder({ params }: { params: { id: string }
   const router = useRouter();
   const [teams, setTeams] = useState<Team[]>([]);
   const [todos, setTodos] = useState<ConversationTodo[]>([]);
-  const [selectedTeamId, setSelectedTeamId] = useState<string>('umbrella');
+  const [selectedTeamId, setSelectedTeamId] = useState<string>('team-1');
   const [documentName, setDocumentName] = useState('Untitled Document');
 
   // Initialize data
@@ -137,13 +159,13 @@ export default function ConversationBuilder({ params }: { params: { id: string }
     const newTeam: Team = {
       id: `team-${Date.now()}`,
       organizationId: '1',
-      name: `Team ${teams.length}`,
+      name: 'New Team',
       leaders: '',
       description: '',
-      color: ['#F59E0B', '#8B5CF6', '#EC4899', '#3B82F6'][teams.length % 4],
+      color: ['#EC4899', '#3B82F6', '#EF4444', '#14B8A6'][teams.length % 4],
       progress: 0,
       isRoot: false,
-      parentId: 'umbrella',
+      parentId: teams.find(t => t.isRoot)?.id || 'team-1',
     };
     setTeams([...teams, newTeam]);
     
