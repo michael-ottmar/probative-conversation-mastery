@@ -224,7 +224,6 @@ export default function PracticeMode({ params }: { params: { id: string } }) {
                     : 'Please select a client persona to begin'}
                 </p>
                 <button
-                  onClick={() => handleSendMessage()}
                   className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                   onClick={() => {
                     if (!selectedPersona) {
