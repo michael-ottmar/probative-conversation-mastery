@@ -13,7 +13,7 @@ interface Document {
   name: string;
   practiceCount: number;
   teamCount: number;
-  lastEdited: Date;
+  lastEdited: Date | string;
   activeUsers: Array<{
     id: string;
     name?: string;

@@ -55,13 +55,13 @@ export interface ConversationTodo {
   content?: string;
   status: 'not-started' | 'in-progress' | 'complete' | 'review';
   aiIdea?: AIIdea; // Current AI suggestion
-  lastModified: Date;
+  lastModified: Date | string;
 }
 
 export interface AIIdea {
   id: string;
   content: string;
-  generatedAt: Date;
+  generatedAt: Date | string;
   context: {
     teamName: string;
     teamDescription?: string;

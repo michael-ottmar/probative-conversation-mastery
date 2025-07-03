@@ -15,7 +15,7 @@ interface DocumentCardProps {
   name: string;
   practiceCount: number;
   teamCount: number;
-  lastEdited: Date;
+  lastEdited: Date | string;
   activeUsers: ActiveUser[];
   onShare: (id: string) => void;
   onDelete: (id: string) => void;
