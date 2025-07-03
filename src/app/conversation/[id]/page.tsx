@@ -1,134 +1,107 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { CompanyUmbrellaStructure } from '@/components/CompanyUmbrellaStructure';
-import { ProbativeConversationTodos } from '@/components/ProbativeConversationTodos';
-import { Organization, Team, ConversationTodo } from '@/lib/types';
-import { ArrowLeft, Play, Users } from 'lucide-react';
+import { CompanyStructure } from '@/components/CompanyStructure';
+import { TodoItem } from '@/components/TodoItem';
+import { Organization, Team, ConversationTodo, AIIdea } from '@/lib/types';
+import { ArrowLeft, Play } from 'lucide-react';
 import Link from 'next/link';
 
-// Mock data - same as dashboard
-const mockOrganization: Organization = {
-  id: '1',
-  name: 'Acme Consulting',
-  description: 'Strategic transformation experts for enterprise organizations',
-  industry: 'Professional Services',
-  createdAt: new Date()
-};
-
-const mockTeams: Team[] = [
+// Default teams with proper leaders format
+const createDefaultTeams = (orgId: string): Team[] => [
   {
     id: 'umbrella',
-    organizationId: '1',
+    organizationId: orgId,
     name: 'Company Umbrella',
-    leaders: ['John Walsh', 'Jane Blackstone'],
-    description: 'Holistic business transformation through integrated expertise',
+    leaders: 'Leadership Team',
+    description: '',
     color: '#1E40AF',
-    progress: 65,
+    progress: 0,
     isRoot: true,
-    expertiseDomain: 'Enterprise Transformation'
   },
   {
-    id: 'creative',
-    organizationId: '1',
-    name: 'Creative Studio',
-    leaders: ['Sarah Chen'],
-    color: '#F59E0B',
-    progress: 80,
-    isRoot: false,
-    parentId: 'umbrella',
-    expertiseDomain: 'Brand Strategy & Design'
-  },
-  {
-    id: 'managed',
-    organizationId: '1',
-    name: 'Managed Services',
-    leaders: ['Mike Ross'],
+    id: 'team-1',
+    organizationId: orgId,
+    name: 'Team',
+    leaders: '',
+    description: '',
     color: '#10B981',
-    progress: 45,
+    progress: 0,
     isRoot: false,
     parentId: 'umbrella',
-    expertiseDomain: 'Operational Excellence'
   },
-  {
-    id: 'orchestration',
-    organizationId: '1',
-    name: 'Orchestration & Discovery',
-    leaders: ['Lisa Park'],
-    color: '#8B5CF6',
-    progress: 30,
-    isRoot: false,
-    parentId: 'umbrella',
-    expertiseDomain: 'Strategic Planning'
-  }
 ];
 
-const mockTodos: ConversationTodo[] = [
+// Todo templates
+const todoTemplates: Omit<ConversationTodo, 'id' | 'conversationId' | 'teamId' | 'lastModified'>[] = [
   {
-    id: '1',
-    conversationId: '1',
-    teamId: 'umbrella',
     type: 'focus',
     title: 'Choose a Focus',
-    content: 'Digital transformation readiness for enterprise organizations',
-    status: 'complete',
-    lastModified: new Date()
+    content: '',
+    status: 'not-started',
   },
   {
-    id: '2',
-    conversationId: '1',
-    teamId: 'umbrella',
     type: 'expertise',
     title: 'Articulate a Claim of Expertise',
-    content: 'We see transformation differently - as a coordinated effort across strategy, operations, and brand',
-    status: 'complete',
-    lastModified: new Date()
-  },
-  {
-    id: '3',
-    conversationId: '1',
-    teamId: 'umbrella',
-    type: 'perspective',
-    title: 'Add a Perspective',
-    status: 'in-progress',
-    lastModified: new Date()
-  },
-  {
-    id: '4',
-    conversationId: '1',
-    teamId: 'umbrella',
-    type: 'thesis',
-    title: 'Publish Thesis',
+    content: '',
     status: 'not-started',
-    lastModified: new Date()
   },
   {
-    id: '5',
-    conversationId: '1',
-    teamId: 'umbrella',
+    type: 'perspective',
+    title: 'Provide Your Point of View',
+    content: '',
+    status: 'not-started',
+  },
+  {
+    type: 'thesis',
+    title: 'Publish Your Thesis',
+    content: '',
+    status: 'not-started',
+  },
+  {
     type: 'contentMap',
     title: 'Develop Content Map',
+    content: '',
     status: 'not-started',
-    lastModified: new Date()
   },
   {
-    id: '6',
-    conversationId: '1',
-    teamId: 'umbrella',
     type: 'leadGen',
     title: 'Develop Lead Gen Plan',
+    content: '',
     status: 'not-started',
-    lastModified: new Date()
-  }
+  },
 ];
 
 export default function ConversationBuilder({ params }: { params: { id: string } }) {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [todos, setTodos] = useState<ConversationTodo[]>([]);
   const [selectedTeamId, setSelectedTeamId] = useState<string>('umbrella');
-  const selectedTeam = mockTeams.find(t => t.id === selectedTeamId);
+  const [documentName, setDocumentName] = useState('Untitled Document');
+
+  // Initialize data
+  useEffect(() => {
+    const initialTeams = createDefaultTeams('1');
+    setTeams(initialTeams);
+    
+    // Create todos for each team
+    const initialTodos: ConversationTodo[] = [];
+    initialTeams.forEach(team => {
+      todoTemplates.forEach((template, index) => {
+        initialTodos.push({
+          ...template,
+          id: `${team.id}-todo-${index}`,
+          conversationId: params.id,
+          teamId: team.id,
+          lastModified: new Date(),
+        });
+      });
+    });
+    setTodos(initialTodos);
+  }, [params.id]);
 
   // Redirect if not authenticated
   if (status === 'unauthenticated') {
@@ -144,122 +117,154 @@ export default function ConversationBuilder({ params }: { params: { id: string }
     );
   }
 
-  const handleTodoClick = (todo: ConversationTodo) => {
-    console.log('Todo clicked:', todo);
-    // Show todo workspace modal/drawer
+  const selectedTeam = teams.find(t => t.id === selectedTeamId);
+  const teamTodos = todos.filter(t => t.teamId === selectedTeamId);
+
+  const handleTeamUpdate = (updatedTeam: Team) => {
+    setTeams(teams.map(t => t.id === updatedTeam.id ? updatedTeam : t));
   };
 
-  const handleGenerateIdeas = (todoType: string) => {
-    console.log('Generate ideas for:', todoType);
-    // Call AI API to generate ideas
+  const handleTeamDelete = (teamId: string) => {
+    setTeams(teams.filter(t => t.id !== teamId));
+    setTodos(todos.filter(t => t.teamId !== teamId));
+    if (selectedTeamId === teamId) {
+      setSelectedTeamId(teams.find(t => t.isRoot)?.id || teams[0]?.id);
+    }
   };
 
-  const handleStatusChange = (todoId: string, status: string) => {
-    console.log('Status change:', todoId, status);
-    // Update todo status
+  const handleTeamAdd = () => {
+    const newTeam: Team = {
+      id: `team-${Date.now()}`,
+      organizationId: '1',
+      name: `Team ${teams.length}`,
+      leaders: '',
+      description: '',
+      color: ['#F59E0B', '#8B5CF6', '#EC4899', '#3B82F6'][teams.length % 4],
+      progress: 0,
+      isRoot: false,
+      parentId: 'umbrella',
+    };
+    setTeams([...teams, newTeam]);
+    
+    // Create todos for new team
+    const newTodos = todoTemplates.map((template, index) => ({
+      ...template,
+      id: `${newTeam.id}-todo-${index}`,
+      conversationId: params.id,
+      teamId: newTeam.id,
+      lastModified: new Date(),
+    }));
+    setTodos([...todos, ...newTodos]);
+  };
+
+  const handleTodoUpdate = (updatedTodo: ConversationTodo) => {
+    setTodos(todos.map(t => t.id === updatedTodo.id ? updatedTodo : t));
+    
+    // Update team progress
+    const teamTodos = todos.filter(t => t.teamId === updatedTodo.teamId);
+    const completedCount = teamTodos.filter(t => 
+      t.id === updatedTodo.id ? updatedTodo.status === 'complete' : t.status === 'complete'
+    ).length;
+    const progress = Math.round((completedCount / teamTodos.length) * 100);
+    
+    setTeams(teams.map(team => 
+      team.id === updatedTodo.teamId ? { ...team, progress } : team
+    ));
+  };
+
+  const handleGenerateIdea = async (todo: ConversationTodo, team: Team) => {
+    // Call AI API
+    try {
+      const response = await fetch('/api/ai/generate-ideas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          todoType: todo.type,
+          todoTitle: todo.title,
+          teamName: team.name,
+          teamDescription: team.description,
+          teamLeaders: team.leaders,
+          existingContent: todo.content,
+        }),
+      });
+
+      if (response.ok) {
+        const { idea } = await response.json();
+        const aiIdea: AIIdea = {
+          id: Date.now().toString(),
+          content: idea,
+          generatedAt: new Date(),
+          context: {
+            teamName: team.name,
+            teamDescription: team.description,
+            leaders: team.leaders,
+            todoType: todo.type,
+          },
+        };
+        
+        handleTodoUpdate({ ...todo, aiIdea });
+      }
+    } catch (error) {
+      console.error('Failed to generate idea:', error);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="container mx-auto px-4 py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
               <Link
                 href="/dashboard"
-                className="text-gray-600 hover:text-gray-900"
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <ArrowLeft className="h-5 w-5" />
               </Link>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Probative Conversation Builder
-              </h1>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">{documentName}</h1>
+                <p className="text-sm text-gray-600">Real-time collaborative team training</p>
+              </div>
             </div>
             <Link
               href={`/conversation/${params.id}/practice`}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              <Play className="h-4 w-4" />
-              Practice Mode
+              <Play className="h-5 w-5" />
+              Practice Conversations
             </Link>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
-        {/* Company Structure */}
-        <CompanyUmbrellaStructure
-          organization={mockOrganization}
-          teams={mockTeams}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <CompanyStructure
+          teams={teams}
           selectedTeamId={selectedTeamId}
           onTeamSelect={setSelectedTeamId}
-          onAddTeam={() => console.log('Add team')}
+          onTeamUpdate={handleTeamUpdate}
+          onTeamDelete={handleTeamDelete}
+          onTeamAdd={handleTeamAdd}
         />
 
-        {/* Selected Team Details */}
         {selectedTeam && (
-          <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex justify-between items-start">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">
-                  {selectedTeam.name}
-                </h2>
-                <p className="text-gray-600 mt-1">{selectedTeam.expertiseDomain}</p>
-                <div className="flex items-center gap-4 mt-3">
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Users className="h-4 w-4" />
-                    {selectedTeam.leaders.join(', ')}
-                  </div>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-3xl font-bold text-blue-600">
-                  {selectedTeam.progress}%
-                </div>
-                <p className="text-sm text-gray-600">Complete</p>
-              </div>
+          <div className="bg-white rounded-lg p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-6">
+              Probative Conversation To-Do\'s
+            </h2>
+            <div className="space-y-6">
+              {teamTodos.map((todo) => (
+                <TodoItem
+                  key={todo.id}
+                  todo={todo}
+                  team={selectedTeam}
+                  onUpdate={handleTodoUpdate}
+                  onGenerateIdea={handleGenerateIdea}
+                />
+              ))}
             </div>
-
-            {selectedTeam.isRoot && (
-              <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                <p className="text-sm text-blue-900">
-                  <strong>Company Umbrella Responsibility:</strong> Articulate the expertise of all teams and demonstrate how our integrated approach creates unique value for enterprise clients.
-                </p>
-              </div>
-            )}
           </div>
         )}
-
-        {/* Probative Conversation Todos */}
-        <div className="mt-8">
-          <ProbativeConversationTodos
-            todos={mockTodos.filter(t => t.teamId === selectedTeamId)}
-            onTodoClick={handleTodoClick}
-            onGenerateIdeas={handleGenerateIdeas}
-            onStatusChange={handleStatusChange}
-          />
-        </div>
-
-        {/* Cross-Team Integration */}
-        <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Cross-Team Integration
-          </h3>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <h4 className="font-medium text-gray-900 mb-2">Team Synergies</h4>
-              <p className="text-sm text-gray-600">
-                Document how {selectedTeam?.name} works with other teams to deliver comprehensive value
-              </p>
-            </div>
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <h4 className="font-medium text-gray-900 mb-2">Unified Narrative</h4>
-              <p className="text-sm text-gray-600">
-                Practice articulating how all teams contribute to the organizational expertise
-              </p>
-            </div>
-          </div>
-        </div>
       </main>
     </div>
   );

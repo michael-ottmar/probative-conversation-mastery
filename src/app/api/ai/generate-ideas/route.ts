@@ -1,67 +1,81 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+const todoTypePrompts = {
+  focus: "Generate a specific, strategic focus area that demonstrates deep expertise. This should be a precise problem or opportunity that only an expert would identify.",
+  expertise: "Create a bold, specific claim of expertise that positions this team as the go-to experts. It should be provocative yet credible.",
+  perspective: "Suggest a contrarian or unique point of view that challenges conventional thinking in the industry. This should showcase thought leadership.",
+  thesis: "Propose a compelling thesis statement that synthesizes the team's expertise into a transformative vision for clients.",
+  contentMap: "Outline key content themes that would demonstrate expertise and educate the market on this team's unique approach.",
+  leadGen: "Suggest innovative lead generation strategies that position the team as experts rather than vendors.",
+};
+
 export async function POST(request: NextRequest) {
   try {
-    const { todoType, organizationContext, teamContext } = await request.json();
+    const { todoType, todoTitle, teamName, teamDescription, teamLeaders, existingContent } = await request.json();
 
-    // Generate ideas specific to each probative conversation step
-    const ideaGenerators: Record<string, () => string[]> = {
-      focus: () => [
-        "Digital transformation readiness for enterprise organizations",
-        "The hidden costs of misaligned brand and operations in scaling companies",
-        "Why 70% of strategic initiatives fail at the execution level",
-        "The expertise gap in modern enterprise leadership",
-        "Breaking down silos between strategy, operations, and brand"
-      ],
-      expertise: () => [
-        "We see transformation differently - as a coordinated effort across strategy, operations, and brand",
-        "Most consultants treat symptoms; we address the root cause of organizational incoherence",
-        "We've developed a unique framework that aligns expertise across all organizational levels",
-        "Our integrated approach reduces transformation time by 40% compared to traditional consulting",
-        "We believe true expertise means knowing when to leverage specialized knowledge across domains"
-      ],
-      perspective: () => [
-        "In our experience, enterprises fail not from lack of strategy but from inability to execute cohesively",
-        "We've observed that the most successful transformations treat brand, operations, and strategy as one system",
-        "The biggest mistake we see is organizations hiring multiple specialists without an integration plan",
-        "Data shows that companies with aligned expertise across teams outperform competitors by 3x",
-        "Most leaders underestimate the cost of expertise silos in their organization"
-      ],
-      thesis: () => [
-        "The future of enterprise consulting is integrated expertise, not specialized silos",
-        "Organizational coherence is the single biggest predictor of transformation success",
-        "Why your next consultant should be an orchestra conductor, not a solo performer",
-        "The myth of the specialist: Why deep expertise requires broad integration",
-        "Beyond transformation: Building organizations that evolve continuously"
-      ],
-      contentMap: () => [
-        "Case study series: Integrated transformation success stories",
-        "White paper: The true cost of consultant silos in enterprise organizations",
-        "Webinar series: Each team demonstrates their expertise in context",
-        "Executive guide: Questions to ask before your next transformation",
-        "Podcast: Conversations with leaders who've achieved organizational coherence"
-      ],
-      leadGen: () => [
-        "Diagnostic tool: Assess your organization's expertise coherence score",
-        "Executive roundtable: 'Is your expertise working against you?'",
-        "Free consultation: Map your expertise gaps across teams",
-        "Workshop: Building your integrated transformation roadmap",
-        "Assessment: Calculate the hidden cost of your expertise silos"
-      ]
+    const todoPrompt = todoTypePrompts[todoType as keyof typeof todoTypePrompts] || todoTypePrompts.focus;
+
+    const prompt = `You are a world-class sales expert with deep knowledge of Blair Enns' "The Win Without Pitching Manifesto" and expertise in probative conversations.
+
+Context about the team:
+- Team Name: ${teamName}
+- Team Description: ${teamDescription || 'Not provided'}
+- Team Leaders: ${teamLeaders || 'Not specified'}
+- Current Task: ${todoTitle}
+${existingContent ? `- What they've written so far: ${existingContent}` : ''}
+
+Your task: ${todoPrompt}
+
+Provide ONE specific, actionable idea that:
+1. Is tailored to this specific team's context
+2. Demonstrates deep expertise that moves them from vendor to expert
+3. Is provocative enough to capture attention but professional
+4. Can be implemented in their probative conversations
+
+Keep your response to 2-3 sentences maximum. Be specific, not generic.`;
+
+    // Call Anthropic API
+    const anthropicResponse = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY!,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-3-haiku-20240307',
+        max_tokens: 150,
+        messages: [{
+          role: 'user',
+          content: prompt,
+        }],
+      }),
+    });
+
+    if (!anthropicResponse.ok) {
+      throw new Error('Failed to generate idea from AI');
+    }
+
+    const data = await anthropicResponse.json();
+    const idea = data.content[0]?.text || 'Unable to generate idea at this time.';
+
+    return NextResponse.json({ idea });
+  } catch (error) {
+    console.error('Error generating idea:', error);
+    
+    // Fallback to static suggestions if AI fails
+    const fallbackIdeas = {
+      focus: "Focus on the intersection of digital transformation and organizational culture - where most consultants fear to tread but where real change happens.",
+      expertise: "We don't just advise on transformation; we've led it ourselves across three Fortune 500 companies, learning what actually works versus what sounds good in boardrooms.",
+      perspective: "Most organizations approach transformation backwards - starting with technology instead of human behavior. We've proven that inverting this approach increases success rates by 70%.",
+      thesis: "True transformation isn't about implementing new systems; it's about creating organizations that can continuously evolve faster than their markets change.",
+      contentMap: "Create a series documenting 'Transformation Failures We've Witnessed' - showing expertise through understanding what doesn't work and why.",
+      leadGen: "Offer a 'Transformation Readiness Score' that reveals the hidden blockers executives don't know they have - positioning you as the expert who sees what others miss.",
     };
 
-    const ideas = ideaGenerators[todoType]?.() || [];
+    const { todoType } = await request.json();
+    const idea = fallbackIdeas[todoType as keyof typeof fallbackIdeas] || fallbackIdeas.focus;
 
-    return NextResponse.json({
-      ideas,
-      methodology: "Based on Blair Enns' Probative Conversation framework",
-      tip: "Remember: Expertise is demonstrated through insights and perspective, not capabilities"
-    });
-  } catch (error) {
-    console.error('Idea generation error:', error);
-    return NextResponse.json(
-      { error: 'Failed to generate ideas' },
-      { status: 500 }
-    );
+    return NextResponse.json({ idea });
   }
 }

@@ -10,7 +10,7 @@ export interface Team {
   id: string;
   organizationId: string;
   name: string;
-  leaders: string[];
+  leaders: string; // Single field like "Justin x Amanda"
   description?: string; // Team's specific expertise area
   color: string;
   progress: number; // 0-100 completion of probative conversation
@@ -54,8 +54,20 @@ export interface ConversationTodo {
   title: string;
   content?: string;
   status: 'not-started' | 'in-progress' | 'complete';
-  aiSuggestions?: string[];
+  aiIdea?: AIIdea; // Current AI suggestion
   lastModified: Date;
+}
+
+export interface AIIdea {
+  id: string;
+  content: string;
+  generatedAt: Date;
+  context: {
+    teamName: string;
+    teamDescription?: string;
+    leaders: string;
+    todoType: string;
+  };
 }
 
 export interface PracticeSettings {
@@ -68,12 +80,19 @@ export interface PracticeSettings {
 export interface ClientPersona {
   id: string;
   name: string; // "Enterprise B2B", "Mid-Market CEO", etc.
+  role?: string; // Job title
   industry: string;
   companySize: string;
   currentMindset: 'vendor-seeking' | 'solution-comparing' | 'expertise-evaluating';
   sophisticationLevel: 'low' | 'medium' | 'high';
   typicalObjections: string[];
   valueDrivers: string[]; // What they care about
+  painPoints?: string[]; // Specific challenges they face
+  budgetConcerns?: string; // Budget constraints or considerations
+  decisionCriteria?: string[]; // How they evaluate solutions
+  communicationStyle?: string; // How they prefer to communicate
+  isDefault?: boolean; // True for the 3 default personas
+  customPrompt?: string; // Additional context for AI roleplay
 }
 
 export interface PracticeSession {
