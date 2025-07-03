@@ -5,8 +5,9 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Send, User, Bot, Lightbulb, Settings } from 'lucide-react';
 import Link from 'next/link';
-import { Message, CoachingNote, ClientPersona } from '@/lib/types';
+import { Message, CoachingNote, ClientPersona, Team, ConversationTodo } from '@/lib/types';
 import { ClientPersonaSettings } from '@/components/ClientPersonaSettings';
+import { useEffect } from 'react';
 
 // Default personas (same as in ClientPersonaSettings)
 const defaultB2BPersona: ClientPersona = {
@@ -54,9 +55,91 @@ export default function PracticeMode({ params }: { params: { id: string } }) {
   const [coachingNotes, setCoachingNotes] = useState<CoachingNote[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [showPersonaSettings, setShowPersonaSettings] = useState(false);
-  const [selectedPersona, setSelectedPersona] = useState<ClientPersona | null>(defaultB2BPersona);
+  const [currentPersona, setCurrentPersona] = useState<ClientPersona | null>(defaultB2BPersona);
+  const [previewPersona, setPreviewPersona] = useState<ClientPersona | null>(null);
   const [customPersonas, setCustomPersonas] = useState<ClientPersona[]>([]);
   const [expertiseScore, setExpertiseScore] = useState(0);
+  const [selectedTeamId, setSelectedTeamId] = useState<string>('team-1');
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [todos, setTodos] = useState<ConversationTodo[]>([]);
+
+  // Load teams and todos data
+  useEffect(() => {
+    // Create default teams similar to conversation page
+    const defaultTeams: Team[] = [
+      {
+        id: 'team-1',
+        organizationId: '1',
+        name: 'Team 1',
+        leaders: 'Leadership Team',
+        description: '',
+        color: '#1E40AF',
+        progress: 0,
+        isRoot: true,
+      },
+      {
+        id: 'team-2',
+        organizationId: '1',
+        name: 'Team 2',
+        leaders: '',
+        description: '',
+        color: '#10B981',
+        progress: 0,
+        isRoot: false,
+        parentId: 'team-1',
+      },
+      {
+        id: 'team-3',
+        organizationId: '1',
+        name: 'Team 3',
+        leaders: '',
+        description: '',
+        color: '#F59E0B',
+        progress: 0,
+        isRoot: false,
+        parentId: 'team-1',
+      },
+      {
+        id: 'team-4',
+        organizationId: '1',
+        name: 'Team 4',
+        leaders: '',
+        description: '',
+        color: '#8B5CF6',
+        progress: 0,
+        isRoot: false,
+        parentId: 'team-1',
+      },
+    ];
+    setTeams(defaultTeams);
+
+    // Create todos for each team
+    const todoTemplates = [
+      { type: 'focus', title: 'Choose a Focus' },
+      { type: 'expertise', title: 'Articulate a Claim of Expertise' },
+      { type: 'perspective', title: 'Provide Your Point of View' },
+      { type: 'thesis', title: 'Publish Your Thesis' },
+      { type: 'contentMap', title: 'Develop Content Map' },
+      { type: 'leadGen', title: 'Develop Lead Gen Plan' },
+    ];
+
+    const allTodos: ConversationTodo[] = [];
+    defaultTeams.forEach(team => {
+      todoTemplates.forEach((template, index) => {
+        allTodos.push({
+          id: `${team.id}-todo-${index}`,
+          conversationId: params.id,
+          teamId: team.id,
+          type: template.type as any,
+          title: template.title,
+          content: '',
+          status: 'not-started',
+          lastModified: new Date(),
+        });
+      });
+    });
+    setTodos(allTodos);
+  }, [params.id]);
 
   // Redirect if not authenticated
   if (status === 'unauthenticated') {
@@ -72,10 +155,15 @@ export default function PracticeMode({ params }: { params: { id: string } }) {
     );
   }
 
+  const selectedTeam = teams.find(t => t.id === selectedTeamId);
+  const teamTodos = todos.filter(t => t.teamId === selectedTeamId);
+  const focusTodo = teamTodos.find(t => t.type === 'focus');
+  const expertiseTodo = teamTodos.find(t => t.type === 'expertise');
+
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
     
-    if (!selectedPersona) {
+    if (!currentPersona) {
       alert('Please select a client persona first');
       return;
     }
@@ -101,11 +189,11 @@ export default function PracticeMode({ params }: { params: { id: string } }) {
         body: JSON.stringify({
           message: inputValue,
           conversationHistory: messages,
-          clientPersona: selectedPersona,
+          clientPersona: currentPersona,
           teamContext: {
-            teamName: 'Company Umbrella', // This would come from the selected team/focus
-            teamDescription: 'Digital transformation experts',
-            teamLeaders: 'Leadership Team'
+            teamName: selectedTeam?.name || 'Team',
+            teamDescription: selectedTeam?.description || '',
+            teamLeaders: selectedTeam?.leaders || ''
           },
           practiceSettings: {
             focusArea: 'Company Holistic Conversation'
@@ -181,21 +269,25 @@ export default function PracticeMode({ params }: { params: { id: string } }) {
               </h1>
             </div>
             <div className="flex items-center gap-4">
-              <select className="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                <option>Company Holistic Conversation</option>
-                <option>Creative Studio Focus</option>
-                <option>Managed Services Focus</option>
+              <select 
+                value={selectedTeamId}
+                onChange={(e) => setSelectedTeamId(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              >
+                {teams.map(team => (
+                  <option key={team.id} value={team.id}>{team.name}</option>
+                ))}
               </select>
               <button
                 onClick={() => setShowPersonaSettings(true)}
                 className={`flex items-center gap-2 px-3 py-2 border rounded-lg text-sm transition-colors ${
-                  selectedPersona 
+                  currentPersona 
                     ? 'border-blue-500 bg-blue-50 text-blue-700 hover:bg-blue-100' 
                     : 'border-gray-300 hover:bg-gray-50'
                 }`}
               >
                 <Settings className="h-4 w-4" />
-                {selectedPersona ? selectedPersona.name : 'Select Client Persona'}
+                {currentPersona ? currentPersona.name : 'Select Client Persona'}
               </button>
             </div>
           </div>
@@ -219,14 +311,14 @@ export default function PracticeMode({ params }: { params: { id: string } }) {
               <div className="text-center py-12">
                 <Bot className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-600">
-                  {selectedPersona 
-                    ? `Start a conversation with your ${selectedPersona.name}`
+                  {currentPersona 
+                    ? `Start a conversation with your ${currentPersona.name}`
                     : 'Please select a client persona to begin'}
                 </p>
                 <button
                   className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                   onClick={() => {
-                    if (!selectedPersona) {
+                    if (!currentPersona) {
                       alert('Please select a client persona first');
                       setShowPersonaSettings(true);
                       return;
@@ -323,29 +415,43 @@ export default function PracticeMode({ params }: { params: { id: string } }) {
           </div>
 
           <div className="space-y-4">
-            {selectedPersona && (
+            {currentPersona && (
               <div className="p-4 bg-purple-50 rounded-lg mb-4">
                 <h4 className="font-medium text-purple-900 mb-2">Current Client</h4>
                 <p className="text-sm font-semibold text-purple-800">
-                  {selectedPersona.name}
+                  {currentPersona.name}
                 </p>
                 <p className="text-xs text-purple-700 mt-1">
-                  {selectedPersona.role} • {selectedPersona.industry}
+                  {currentPersona.role} • {currentPersona.industry}
                 </p>
+              </div>
+            )}
+
+            {selectedTeam && (
+              <div className="p-4 bg-yellow-50 rounded-lg mb-4">
+                <h4 className="font-medium text-yellow-900 mb-2">Speaking as</h4>
+                <p className="text-sm font-semibold text-yellow-800">
+                  {selectedTeam.name}
+                </p>
+                {selectedTeam.leaders && (
+                  <p className="text-xs text-yellow-700 mt-1">
+                    Led by: {selectedTeam.leaders}
+                  </p>
+                )}
               </div>
             )}
 
             <div className="p-4 bg-blue-50 rounded-lg">
               <h4 className="font-medium text-blue-900 mb-2">Your Focus</h4>
               <p className="text-sm text-blue-800">
-                Digital transformation readiness for enterprise organizations
+                {focusTodo?.content || 'No focus defined yet'}
               </p>
             </div>
 
             <div className="p-4 bg-green-50 rounded-lg">
               <h4 className="font-medium text-green-900 mb-2">Your Expertise Claim</h4>
               <p className="text-sm text-green-800">
-                We see transformation differently - as a coordinated effort across strategy, operations, and brand
+                {expertiseTodo?.content || 'No expertise claim defined yet'}
               </p>
             </div>
 
@@ -393,17 +499,24 @@ export default function PracticeMode({ params }: { params: { id: string } }) {
       <ClientPersonaSettings
         isOpen={showPersonaSettings}
         onClose={() => setShowPersonaSettings(false)}
-        currentPersona={selectedPersona}
-        onSelectPersona={(persona) => {
-          setSelectedPersona(persona);
-          setShowPersonaSettings(false);
+        currentPersona={currentPersona}
+        selectedPersona={previewPersona}
+        onSelectPersona={(persona) => setPreviewPersona(persona)}
+        onConfirmPersona={() => {
+          if (previewPersona) {
+            setCurrentPersona(previewPersona);
+            setShowPersonaSettings(false);
+          }
         }}
         customPersonas={customPersonas}
         onCreatePersona={(persona) => setCustomPersonas([...customPersonas, persona])}
         onDeletePersona={(id) => {
           setCustomPersonas(customPersonas.filter(p => p.id !== id));
-          if (selectedPersona?.id === id) {
-            setSelectedPersona(null);
+          if (currentPersona?.id === id) {
+            setCurrentPersona(null);
+          }
+          if (previewPersona?.id === id) {
+            setPreviewPersona(null);
           }
         }}
       />

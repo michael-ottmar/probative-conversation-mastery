@@ -41,7 +41,10 @@ export function TeamDetails({ team, onUpdate }: TeamDetailsProps) {
   };
 
   return (
-    <div className="bg-white rounded-lg border-2 border-blue-500 p-6">
+    <div 
+      className="bg-white rounded-lg border-l-4 border-r border-t border-b border-gray-200 p-6"
+      style={{ borderLeftColor: team.color }}
+    >
       {/* Team Name */}
       <div className="mb-4">
         {isEditingName ? (

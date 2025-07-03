@@ -33,13 +33,17 @@ export function CompanyStructure({
     <div className="bg-white rounded-lg p-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-900">Company Structure</h2>
-        <button
-          onClick={onTeamAdd}
-          className="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors"
-          title="Add Team"
-        >
-          <Plus className="h-5 w-5" />
-        </button>
+        <div className="relative group">
+          <button
+            onClick={onTeamAdd}
+            className="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors"
+          >
+            <Plus className="h-5 w-5" />
+          </button>
+          <span className="absolute -bottom-8 right-0 px-2 py-1 text-xs bg-gray-800 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
+            Add Team
+          </span>
+        </div>
       </div>
 
       {/* Visual Team Hierarchy */}

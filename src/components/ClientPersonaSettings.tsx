@@ -8,7 +8,9 @@ interface ClientPersonaSettingsProps {
   isOpen: boolean;
   onClose: () => void;
   currentPersona: ClientPersona | null;
+  selectedPersona: ClientPersona | null;
   onSelectPersona: (persona: ClientPersona) => void;
+  onConfirmPersona: () => void;
   customPersonas: ClientPersona[];
   onCreatePersona: (persona: ClientPersona) => void;
   onDeletePersona: (id: string) => void;
@@ -130,7 +132,9 @@ export function ClientPersonaSettings({
   isOpen,
   onClose,
   currentPersona,
+  selectedPersona,
   onSelectPersona,
+  onConfirmPersona,
   customPersonas,
   onCreatePersona,
   onDeletePersona
@@ -253,8 +257,10 @@ export function ClientPersonaSettings({
                     <div
                       key={persona.id}
                       className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                        currentPersona?.id === persona.id
+                        selectedPersona?.id === persona.id
                           ? 'border-blue-500 bg-blue-50'
+                          : currentPersona?.id === persona.id
+                          ? 'border-green-500 bg-green-50'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                       onClick={() => onSelectPersona(persona)}
@@ -296,14 +302,22 @@ export function ClientPersonaSettings({
                 </div>
               </div>
 
-              {currentPersona && (
+              {selectedPersona && (
                 <div className="border-t border-gray-200 pt-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Selected Persona Details</h3>
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Selected Persona Details</h3>
+                    <button
+                      onClick={onConfirmPersona}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Chat with Client
+                    </button>
+                  </div>
                   <div className="space-y-4">
                     <div>
                       <h4 className="font-medium text-gray-700 mb-2">Typical Objections</h4>
                       <ul className="list-disc list-inside space-y-1 text-sm text-gray-600">
-                        {currentPersona.typicalObjections.map((objection, i) => (
+                        {selectedPersona.typicalObjections.map((objection, i) => (
                           <li key={i}>{objection}</li>
                         ))}
                       </ul>
@@ -311,25 +325,25 @@ export function ClientPersonaSettings({
                     <div>
                       <h4 className="font-medium text-gray-700 mb-2">Value Drivers</h4>
                       <ul className="list-disc list-inside space-y-1 text-sm text-gray-600">
-                        {currentPersona.valueDrivers.map((driver, i) => (
+                        {selectedPersona.valueDrivers.map((driver, i) => (
                           <li key={i}>{driver}</li>
                         ))}
                       </ul>
                     </div>
-                    {currentPersona.painPoints && currentPersona.painPoints.length > 0 && (
+                    {selectedPersona.painPoints && selectedPersona.painPoints.length > 0 && (
                       <div>
                         <h4 className="font-medium text-gray-700 mb-2">Pain Points</h4>
                         <ul className="list-disc list-inside space-y-1 text-sm text-gray-600">
-                          {currentPersona.painPoints.map((pain, i) => (
+                          {selectedPersona.painPoints.map((pain, i) => (
                             <li key={i}>{pain}</li>
                           ))}
                         </ul>
                       </div>
                     )}
-                    {currentPersona.communicationStyle && (
+                    {selectedPersona.communicationStyle && (
                       <div>
                         <h4 className="font-medium text-gray-700 mb-2">Communication Style</h4>
-                        <p className="text-sm text-gray-600">{currentPersona.communicationStyle}</p>
+                        <p className="text-sm text-gray-600">{selectedPersona.communicationStyle}</p>
                       </div>
                     )}
                   </div>
