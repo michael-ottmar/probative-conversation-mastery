@@ -19,7 +19,9 @@ model User {
   
   accounts      Account[]
   sessions      Session[]
-  organizations OrganizationUser[]
+  documents     Document[]   @relation("DocumentOwner")
+  sharedDocs    DocumentShare[]
+  practiceNotes CoachingNote[]
 }
 
 model Account {
@@ -49,69 +51,105 @@ model Session {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model Organization {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+// Document is the main container (replacing Organization/Conversation)
+model Document {
+  id           String   @id @default(cuid())
+  name         String
+  ownerId      String
+  owner        User     @relation("DocumentOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  teams        Team[]
+  shares       DocumentShare[]
+  practices    PracticeSession[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
   
-  users       OrganizationUser[]
-  teams       Team[]
-  conversations Conversation[]
+  @@index([ownerId])
 }
 
-model OrganizationUser {
-  id             String       @id @default(cuid())
-  userId         String
-  organizationId String
-  role           String       @default("member")
-  joinedAt       DateTime     @default(now())
+model DocumentShare {
+  id         String   @id @default(cuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role       String   @default("viewer") // viewer | editor
+  createdAt  DateTime @default(now())
   
-  user           User         @relation(fields: [userId], references: [id])
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  
-  @@unique([userId, organizationId])
+  @@unique([documentId, userId])
+  @@index([userId])
 }
 
 model Team {
-  id             String       @id @default(cuid())
-  organizationId String
-  name           String
-  description    String?
-  color          String
-  progress       Int          @default(0)
-  isRoot         Boolean      @default(false)
-  parentId       String?
-  leaders        String[]
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  id           String   @id @default(cuid())
+  documentId   String
+  document     Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  name         String
+  leaders      String   @default("")
+  description  String   @default("")
+  color        String
+  isRoot       Boolean  @default(false)
+  parentId     String?
+  todos        Todo[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
   
-  organization   Organization @relation(fields: [organizationId], references: [id])
+  @@index([documentId])
 }
 
-model Conversation {
-  id             String       @id @default(cuid())
-  organizationId String
-  name           String
-  objective      String
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+model Todo {
+  id           String   @id @default(cuid())
+  teamId       String
+  team         Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  type         String   // focus | expertise | perspective | thesis | contentMap | leadGen
+  title        String
+  content      String   @default("")
+  status       String   @default("not-started") // not-started | in-progress | review | complete
+  aiIdea       Json?    // Stores the AI-generated idea
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
   
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  todos          ConversationTodo[]
+  @@index([teamId])
 }
 
-model ConversationTodo {
-  id             String       @id @default(cuid())
-  conversationId String
-  teamId         String
-  type           String
-  title          String
-  content        String?
-  status         String       @default("not-started")
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+model PracticeSession {
+  id           String         @id @default(cuid())
+  documentId   String
+  document     Document       @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  teamId       String
+  clientPersona Json          // Stores the full persona object
+  messages     Message[]
+  coachingNotes CoachingNote[]
+  expertiseScore Int          @default(0)
+  isActive     Boolean        @default(true)
+  startedAt    DateTime       @default(now())
+  completedAt  DateTime?
   
-  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  @@index([documentId])
+}
+
+model Message {
+  id         String          @id @default(cuid())
+  sessionId  String
+  session    PracticeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role       String          // user | client
+  content    String
+  timestamp  DateTime        @default(now())
+  
+  @@index([sessionId])
+}
+
+model CoachingNote {
+  id              String          @id @default(cuid())
+  sessionId       String
+  session         PracticeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type            String          // strength | improvement | insight
+  content         String
+  relatedMessage  String?
+  timestamp       DateTime        @default(now())
+  
+  @@index([sessionId])
+  @@index([userId])
 }
