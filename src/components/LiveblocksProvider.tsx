@@ -28,7 +28,7 @@ export function LiveblocksRoomProvider({
       }}
     >
       <ClientSideSuspense fallback={fallback || <div>Loading...</div>}>
-        {children}
+        {() => children}
       </ClientSideSuspense>
     </RoomProvider>
   );
