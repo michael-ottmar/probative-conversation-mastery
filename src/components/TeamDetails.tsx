@@ -6,9 +6,10 @@ import { Team } from '@/lib/types';
 interface TeamDetailsProps {
   team: Team;
   onUpdate: (team: Team) => void;
+  readOnly?: boolean;
 }
 
-export function TeamDetails({ team, onUpdate }: TeamDetailsProps) {
+export function TeamDetails({ team, onUpdate, readOnly = false }: TeamDetailsProps) {
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [isEditingLeaders, setIsEditingLeaders] = useState(false);
@@ -65,7 +66,7 @@ export function TeamDetails({ team, onUpdate }: TeamDetailsProps) {
           />
         ) : (
           <h3
-            onClick={() => setIsEditingName(true)}
+            onClick={() => !readOnly && setIsEditingName(true)}
             className="text-2xl font-bold cursor-text hover:bg-gray-50 px-2 py-1 -mx-2 rounded"
           >
             {team.name}
@@ -87,7 +88,7 @@ export function TeamDetails({ team, onUpdate }: TeamDetailsProps) {
           />
         ) : (
           <div
-            onClick={() => setIsEditingDescription(true)}
+            onClick={() => !readOnly && setIsEditingDescription(true)}
             className="min-h-[80px] px-3 py-2 bg-gray-50 rounded-lg cursor-text hover:bg-gray-100"
           >
             {team.description ? (
@@ -121,7 +122,7 @@ export function TeamDetails({ team, onUpdate }: TeamDetailsProps) {
           />
         ) : (
           <div
-            onClick={() => setIsEditingLeaders(true)}
+            onClick={() => !readOnly && setIsEditingLeaders(true)}
             className="px-3 py-2 bg-gray-50 rounded-lg cursor-text hover:bg-gray-100"
           >
             {team.leaders || <span className="text-gray-400">Add team leaders</span>}

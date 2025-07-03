@@ -10,123 +10,96 @@ import { Organization, Team, ConversationTodo, AIIdea } from '@/lib/types';
 import { ArrowLeft, Play } from 'lucide-react';
 import Link from 'next/link';
 
-// Default teams with proper leaders format
-const createDefaultTeams = (orgId: string): Team[] => [
-  {
-    id: 'team-1',
-    organizationId: orgId,
-    name: 'Team 1',
-    leaders: 'Leadership Team',
-    description: '',
-    color: '#1E40AF',
-    progress: 0,
-    isRoot: true,
-  },
-  {
-    id: 'team-2',
-    organizationId: orgId,
-    name: 'Team 2',
-    leaders: '',
-    description: '',
-    color: '#10B981',
-    progress: 0,
-    isRoot: false,
-    parentId: 'team-1',
-  },
-  {
-    id: 'team-3',
-    organizationId: orgId,
-    name: 'Team 3',
-    leaders: '',
-    description: '',
-    color: '#F59E0B',
-    progress: 0,
-    isRoot: false,
-    parentId: 'team-1',
-  },
-  {
-    id: 'team-4',
-    organizationId: orgId,
-    name: 'Team 4',
-    leaders: '',
-    description: '',
-    color: '#8B5CF6',
-    progress: 0,
-    isRoot: false,
-    parentId: 'team-1',
-  },
-];
-
-// Todo templates
-const todoTemplates: Omit<ConversationTodo, 'id' | 'conversationId' | 'teamId' | 'lastModified'>[] = [
-  {
-    type: 'focus',
-    title: 'Choose a Focus',
-    content: '',
-    status: 'not-started',
-  },
-  {
-    type: 'expertise',
-    title: 'Articulate a Claim of Expertise',
-    content: '',
-    status: 'not-started',
-  },
-  {
-    type: 'perspective',
-    title: 'Provide Your Point of View',
-    content: '',
-    status: 'not-started',
-  },
-  {
-    type: 'thesis',
-    title: 'Publish Your Thesis',
-    content: '',
-    status: 'not-started',
-  },
-  {
-    type: 'contentMap',
-    title: 'Develop Content Map',
-    content: '',
-    status: 'not-started',
-  },
-  {
-    type: 'leadGen',
-    title: 'Develop Lead Gen Plan',
-    content: '',
-    status: 'not-started',
-  },
-];
-
 export default function ConversationBuilder({ params }: { params: { id: string } }) {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [teams, setTeams] = useState<Team[]>([]);
   const [todos, setTodos] = useState<ConversationTodo[]>([]);
-  const [selectedTeamId, setSelectedTeamId] = useState<string>('team-1');
+  const [selectedTeamId, setSelectedTeamId] = useState<string>('');
   const [documentName, setDocumentName] = useState('Untitled Document');
   const [isEditingDocumentName, setIsEditingDocumentName] = useState(false);
   const [editedDocumentName, setEditedDocumentName] = useState('Untitled Document');
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasEditAccess, setHasEditAccess] = useState(true);
+  const [documentOwnerId, setDocumentOwnerId] = useState('');
 
-  // Initialize data
+  // Load document data from API
   useEffect(() => {
-    const initialTeams = createDefaultTeams('1');
-    setTeams(initialTeams);
-    
-    // Create todos for each team
-    const initialTodos: ConversationTodo[] = [];
-    initialTeams.forEach(team => {
-      todoTemplates.forEach((template, index) => {
-        initialTodos.push({
-          ...template,
-          id: `${team.id}-todo-${index}`,
-          conversationId: params.id,
-          teamId: team.id,
-          lastModified: new Date(),
-        });
-      });
-    });
-    setTodos(initialTodos);
-  }, [params.id]);
+    if (status === 'authenticated') {
+      fetchDocument();
+    }
+  }, [status, params.id]);
+
+  const fetchDocument = async () => {
+    try {
+      const response = await fetch(`/api/documents/${params.id}`);
+      if (response.ok) {
+        const doc = await response.json();
+        setDocumentName(doc.name);
+        setEditedDocumentName(doc.name);
+        setDocumentOwnerId(doc.ownerId);
+        
+        // Transform teams to match our interface
+        const transformedTeams = doc.teams.map((team: any) => ({
+          ...team,
+          organizationId: doc.id,
+          progress: calculateTeamProgress(team.todos)
+        }));
+        setTeams(transformedTeams);
+        
+        // Transform todos to match our interface
+        const allTodos = doc.teams.flatMap((team: any) => 
+          team.todos.map((todo: any) => ({
+            ...todo,
+            conversationId: doc.id,
+            lastModified: new Date(todo.updatedAt)
+          }))
+        );
+        setTodos(allTodos);
+        
+        // Set initial selected team
+        const rootTeam = transformedTeams.find((t: Team) => t.isRoot);
+        if (rootTeam) {
+          setSelectedTeamId(rootTeam.id);
+        }
+        
+        // Check edit access based on user ID
+        const currentUser = await getCurrentUser();
+        const isOwner = doc.ownerId === currentUser?.id;
+        const hasEditShare = doc.shares?.some((share: any) => 
+          share.userId === currentUser?.id && share.role === 'editor'
+        );
+        setHasEditAccess(isOwner || hasEditShare);
+      } else if (response.status === 404) {
+        router.push('/dashboard');
+      }
+    } catch (error) {
+      console.error('Error fetching document:', error);
+      router.push('/dashboard');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getCurrentUser = async () => {
+    if (!session?.user?.email) return null;
+    try {
+      const response = await fetch('/api/user/current');
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (error) {
+      console.error('Error fetching current user:', error);
+    }
+    return null;
+  };
+
+  const calculateTeamProgress = (todos: any[]) => {
+    const completedCount = todos.filter(t => 
+      t.status === 'complete' || t.status === 'review'
+    ).length;
+    return todos.length > 0 ? Math.round((completedCount / todos.length) * 100) : 0;
+  };
 
   // Redirect if not authenticated
   if (status === 'unauthenticated') {
@@ -134,7 +107,7 @@ export default function ConversationBuilder({ params }: { params: { id: string }
     return null;
   }
 
-  if (status === 'loading') {
+  if (status === 'loading' || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-lg">Loading...</div>
@@ -145,47 +118,93 @@ export default function ConversationBuilder({ params }: { params: { id: string }
   const selectedTeam = teams.find(t => t.id === selectedTeamId);
   const teamTodos = todos.filter(t => t.teamId === selectedTeamId);
 
-  const handleTeamUpdate = (updatedTeam: Team) => {
+  const handleTeamUpdate = async (updatedTeam: Team) => {
+    if (!hasEditAccess) return;
+    
+    // Optimistically update UI
     setTeams(teams.map(t => t.id === updatedTeam.id ? updatedTeam : t));
+    
+    // Persist to database
+    try {
+      await fetch(`/api/teams/${updatedTeam.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: updatedTeam.name,
+          leaders: updatedTeam.leaders,
+          description: updatedTeam.description,
+          color: updatedTeam.color
+        })
+      });
+    } catch (error) {
+      console.error('Error updating team:', error);
+      // Could revert on error
+    }
   };
 
-  const handleTeamDelete = (teamId: string) => {
+  const handleTeamDelete = async (teamId: string) => {
+    if (!hasEditAccess) return;
+    
+    // Optimistically update UI
     setTeams(teams.filter(t => t.id !== teamId));
     setTodos(todos.filter(t => t.teamId !== teamId));
     if (selectedTeamId === teamId) {
       setSelectedTeamId(teams.find(t => t.isRoot)?.id || teams[0]?.id);
     }
-  };
-
-  const handleTeamAdd = () => {
-    const newTeam: Team = {
-      id: `team-${Date.now()}`,
-      organizationId: '1',
-      name: 'New Team',
-      leaders: '',
-      description: '',
-      color: ['#EC4899', '#3B82F6', '#EF4444', '#14B8A6'][teams.length % 4],
-      progress: 0,
-      isRoot: false,
-      parentId: teams.find(t => t.isRoot)?.id || 'team-1',
-    };
-    setTeams([...teams, newTeam]);
     
-    // Create todos for new team
-    const newTodos = todoTemplates.map((template, index) => ({
-      ...template,
-      id: `${newTeam.id}-todo-${index}`,
-      conversationId: params.id,
-      teamId: newTeam.id,
-      lastModified: new Date(),
-    }));
-    setTodos([...todos, ...newTodos]);
+    // Persist to database
+    try {
+      await fetch(`/api/teams/${teamId}`, {
+        method: 'DELETE'
+      });
+    } catch (error) {
+      console.error('Error deleting team:', error);
+    }
   };
 
-  const handleTodoUpdate = (updatedTodo: ConversationTodo) => {
+  const handleTeamAdd = async () => {
+    if (!hasEditAccess) return;
+    
+    try {
+      const response = await fetch('/api/teams', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          documentId: params.id,
+          name: 'New Team',
+          color: ['#EC4899', '#3B82F6', '#EF4444', '#14B8A6'][teams.length % 4],
+          parentId: teams.find(t => t.isRoot)?.id
+        })
+      });
+      
+      if (response.ok) {
+        const newTeam = await response.json();
+        setTeams([...teams, {
+          ...newTeam,
+          organizationId: params.id,
+          progress: 0
+        }]);
+        
+        // Add todos to state
+        const newTodos = newTeam.todos.map((todo: any) => ({
+          ...todo,
+          conversationId: params.id,
+          lastModified: new Date(todo.updatedAt)
+        }));
+        setTodos([...todos, ...newTodos]);
+      }
+    } catch (error) {
+      console.error('Error adding team:', error);
+    }
+  };
+
+  const handleTodoUpdate = async (updatedTodo: ConversationTodo) => {
+    if (!hasEditAccess) return;
+    
+    // Optimistically update UI
     setTodos(todos.map(t => t.id === updatedTodo.id ? updatedTodo : t));
     
-    // Update team progress
+    // Update team progress locally
     const teamTodos = todos.filter(t => t.teamId === updatedTodo.teamId);
     const completedCount = teamTodos.filter(t => {
       const status = t.id === updatedTodo.id ? updatedTodo.status : t.status;
@@ -196,6 +215,21 @@ export default function ConversationBuilder({ params }: { params: { id: string }
     setTeams(teams.map(team => 
       team.id === updatedTodo.teamId ? { ...team, progress } : team
     ));
+    
+    // Persist to database
+    try {
+      await fetch(`/api/todos/${updatedTodo.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: updatedTodo.content,
+          status: updatedTodo.status,
+          aiIdea: updatedTodo.aiIdea
+        })
+      });
+    } catch (error) {
+      console.error('Error updating todo:', error);
+    }
   };
 
   const handleGenerateIdea = async (todo: ConversationTodo, team: Team) => {
@@ -235,6 +269,20 @@ export default function ConversationBuilder({ params }: { params: { id: string }
     }
   };
 
+  const handleDocumentNameSave = async (newName: string) => {
+    if (!hasEditAccess) return;
+    
+    try {
+      await fetch(`/api/documents/${params.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newName })
+      });
+    } catch (error) {
+      console.error('Error updating document name:', error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm border-b border-gray-200">
@@ -248,14 +296,16 @@ export default function ConversationBuilder({ params }: { params: { id: string }
                 <ArrowLeft className="h-5 w-5" />
               </Link>
               <div>
-                {isEditingDocumentName ? (
+                {isEditingDocumentName && hasEditAccess ? (
                   <input
                     type="text"
                     value={editedDocumentName}
                     onChange={(e) => setEditedDocumentName(e.target.value)}
                     onBlur={() => {
                       if (editedDocumentName.trim()) {
-                        setDocumentName(editedDocumentName.trim());
+                        const newName = editedDocumentName.trim();
+                        setDocumentName(newName);
+                        handleDocumentNameSave(newName);
                       } else {
                         setEditedDocumentName(documentName);
                       }
@@ -264,7 +314,9 @@ export default function ConversationBuilder({ params }: { params: { id: string }
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         if (editedDocumentName.trim()) {
-                          setDocumentName(editedDocumentName.trim());
+                          const newName = editedDocumentName.trim();
+                          setDocumentName(newName);
+                          handleDocumentNameSave(newName);
                         }
                         setIsEditingDocumentName(false);
                       }
@@ -278,16 +330,21 @@ export default function ConversationBuilder({ params }: { params: { id: string }
                   />
                 ) : (
                   <h1 
-                    className="text-2xl font-bold text-gray-900 cursor-text hover:bg-gray-100 px-1 -mx-1 rounded"
+                    className={`text-2xl font-bold text-gray-900 ${hasEditAccess ? 'cursor-text hover:bg-gray-100' : ''} px-1 -mx-1 rounded`}
                     onClick={() => {
-                      setIsEditingDocumentName(true);
-                      setEditedDocumentName(documentName);
+                      if (hasEditAccess) {
+                        setIsEditingDocumentName(true);
+                        setEditedDocumentName(documentName);
+                      }
                     }}
                   >
                     {documentName}
                   </h1>
                 )}
-                <p className="text-sm text-gray-600">Real-time collaborative team training</p>
+                <p className="text-sm text-gray-600">
+                  Real-time collaborative team training
+                  {!hasEditAccess && ' (View Only)'}
+                </p>
               </div>
             </div>
             <Link
@@ -315,6 +372,7 @@ export default function ConversationBuilder({ params }: { params: { id: string }
           <TeamDetails
             team={selectedTeam}
             onUpdate={handleTeamUpdate}
+            readOnly={!hasEditAccess}
           />
         )}
 
