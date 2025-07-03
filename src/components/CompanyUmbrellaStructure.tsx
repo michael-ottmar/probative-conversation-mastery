@@ -44,7 +44,7 @@ export function CompanyUmbrellaStructure({
                 <p className="text-blue-100 mt-1">{umbrellaTeam.description}</p>
               )}
               <div className="mt-2 text-sm text-blue-200">
-                Leaders: {umbrellaTeam.leaders.join(', ')}
+                Leaders: {umbrellaTeam.leaders || 'Not specified'}
               </div>
             </div>
             <div className="text-right">
@@ -79,7 +79,7 @@ export function CompanyUmbrellaStructure({
             )}
             <div className="flex justify-between items-center mt-3">
               <div className="text-sm text-gray-500">
-                {team.leaders.length} leaders
+                {team.leaders || 'No leaders'}
               </div>
               <div className="text-lg font-semibold text-blue-600">
                 {team.progress}%
