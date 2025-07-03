@@ -53,14 +53,16 @@ export function DocumentCard({
     setIsEditing(false);
   };
 
-  const formatLastEdited = (date: Date) => {
+  const formatLastEdited = (date: Date | string) => {
     const now = new Date();
-    const diff = now.getTime() - date.getTime();
+    const editDate = typeof date === 'string' ? new Date(date) : date;
+    const diff = now.getTime() - editDate.getTime();
     const minutes = Math.floor(diff / 60000);
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
     const months = Math.floor(diff / 2592000000);
 
+    if (minutes < 1) return `Edited just now`;
     if (minutes < 60) return `Edited ${minutes}m ago`;
     if (hours < 24) return `Edited ${hours}h ago`;
     if (days < 30) return `Edited ${days} day${days > 1 ? 's' : ''} ago`;
