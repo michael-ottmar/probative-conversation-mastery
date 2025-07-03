@@ -229,28 +229,31 @@ export function ClientPersonaSettings({
       <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
         <div className="flex justify-between items-center p-6 border-b border-gray-200">
           <h2 className="text-2xl font-bold text-gray-900">Client Persona Settings</h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onConfirmPersona}
+              disabled={!selectedPersona}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+              Chat with client
+            </button>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
 
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
           {!isCreating ? (
             <>
               <div className="mb-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Available Personas</h3>
-                  <button
-                    onClick={() => setIsCreating(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Create Custom Persona
-                  </button>
-                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Available Personas</h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {allPersonas.map((persona) => (
@@ -259,8 +262,6 @@ export function ClientPersonaSettings({
                       className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
                         selectedPersona?.id === persona.id
                           ? 'border-blue-500 bg-blue-50'
-                          : currentPersona?.id === persona.id
-                          ? 'border-green-500 bg-green-50'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                       onClick={() => onSelectPersona(persona)}
@@ -299,25 +300,29 @@ export function ClientPersonaSettings({
                       </div>
                     </div>
                   ))}
+                  {/* Create Custom Client button as a card */}
+                  <div
+                    className="p-4 rounded-lg border-2 border-gray-200 hover:border-gray-300 cursor-pointer transition-all flex flex-col items-center justify-center min-h-[150px]"
+                    onClick={() => setIsCreating(true)}
+                  >
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Plus className="h-5 w-5" />
+                      <User className="h-5 w-5" />
+                    </div>
+                    <p className="mt-2 text-gray-900 font-medium">Create custom client</p>
+                  </div>
                 </div>
               </div>
 
-              {selectedPersona && (
+              {/* Always show selected persona details */}
+              {(selectedPersona || currentPersona) && (
                 <div className="border-t border-gray-200 pt-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Selected Persona Details</h3>
-                    <button
-                      onClick={onConfirmPersona}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      Chat with Client
-                    </button>
-                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Selected Persona Details</h3>
                   <div className="space-y-4">
                     <div>
                       <h4 className="font-medium text-gray-700 mb-2">Typical Objections</h4>
                       <ul className="list-disc list-inside space-y-1 text-sm text-gray-600">
-                        {selectedPersona.typicalObjections.map((objection, i) => (
+                        {(selectedPersona || currentPersona)!.typicalObjections.map((objection, i) => (
                           <li key={i}>{objection}</li>
                         ))}
                       </ul>
@@ -325,25 +330,25 @@ export function ClientPersonaSettings({
                     <div>
                       <h4 className="font-medium text-gray-700 mb-2">Value Drivers</h4>
                       <ul className="list-disc list-inside space-y-1 text-sm text-gray-600">
-                        {selectedPersona.valueDrivers.map((driver, i) => (
+                        {(selectedPersona || currentPersona)!.valueDrivers.map((driver, i) => (
                           <li key={i}>{driver}</li>
                         ))}
                       </ul>
                     </div>
-                    {selectedPersona.painPoints && selectedPersona.painPoints.length > 0 && (
+                    {(selectedPersona || currentPersona)!.painPoints && (selectedPersona || currentPersona)!.painPoints!.length > 0 && (
                       <div>
                         <h4 className="font-medium text-gray-700 mb-2">Pain Points</h4>
                         <ul className="list-disc list-inside space-y-1 text-sm text-gray-600">
-                          {selectedPersona.painPoints.map((pain, i) => (
+                          {(selectedPersona || currentPersona)!.painPoints!.map((pain, i) => (
                             <li key={i}>{pain}</li>
                           ))}
                         </ul>
                       </div>
                     )}
-                    {selectedPersona.communicationStyle && (
+                    {(selectedPersona || currentPersona)!.communicationStyle && (
                       <div>
                         <h4 className="font-medium text-gray-700 mb-2">Communication Style</h4>
-                        <p className="text-sm text-gray-600">{selectedPersona.communicationStyle}</p>
+                        <p className="text-sm text-gray-600">{(selectedPersona || currentPersona)!.communicationStyle}</p>
                       </div>
                     )}
                   </div>

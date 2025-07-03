@@ -7,8 +7,10 @@ import { CompanyStructure } from '@/components/CompanyStructure';
 import { TodoItem } from '@/components/TodoItem';
 import { TeamDetails } from '@/components/TeamDetails';
 import { Organization, Team, ConversationTodo, AIIdea } from '@/lib/types';
-import { ArrowLeft, Play } from 'lucide-react';
+import { ArrowLeft, Play, Share2 } from 'lucide-react';
 import Link from 'next/link';
+import { ShareModal } from '@/components/ShareModal';
+import { getAvatarColor } from '@/lib/avatar';
 
 export default function ConversationBuilder({ params }: { params: { id: string } }) {
   const { data: session, status } = useSession();
@@ -22,6 +24,8 @@ export default function ConversationBuilder({ params }: { params: { id: string }
   const [isLoading, setIsLoading] = useState(true);
   const [hasEditAccess, setHasEditAccess] = useState(true);
   const [documentOwnerId, setDocumentOwnerId] = useState('');
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [activeUsers, setActiveUsers] = useState<Array<{id: string; name?: string; email: string; color?: string}>>([]);
 
   // Load document data from API
   useEffect(() => {
@@ -38,6 +42,23 @@ export default function ConversationBuilder({ params }: { params: { id: string }
         setDocumentName(doc.name);
         setEditedDocumentName(doc.name);
         setDocumentOwnerId(doc.ownerId);
+        
+        // Set active users (owner + shares)
+        const users = [
+          { 
+            id: doc.owner.id, 
+            name: doc.owner.name, 
+            email: doc.owner.email,
+            color: getAvatarColor(doc.owner.email)
+          },
+          ...doc.shares.map((share: any) => ({
+            id: share.user.id,
+            name: share.user.name,
+            email: share.user.email,
+            color: getAvatarColor(share.user.email)
+          }))
+        ];
+        setActiveUsers(users);
         
         // Transform teams to match our interface
         const transformedTeams = doc.teams.map((team: any) => ({
@@ -347,13 +368,51 @@ export default function ConversationBuilder({ params }: { params: { id: string }
                 </p>
               </div>
             </div>
-            <Link
-              href={`/conversation/${params.id}/practice?team=${selectedTeamId}`}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <Play className="h-5 w-5" />
-              Practice Conversations
-            </Link>
+            <div className="flex items-center gap-3">
+              {/* Active Users */}
+              {activeUsers.length > 0 && (
+                <div className="flex -space-x-2">
+                  {activeUsers.slice(0, 3).map((user) => (
+                    <div
+                      key={user.id}
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium ring-2 ring-white"
+                      style={{ backgroundColor: user.color || getAvatarColor(user.email) }}
+                      title={user.name || user.email}
+                    >
+                      {(user.name || user.email).charAt(0).toUpperCase()}
+                    </div>
+                  ))}
+                  {activeUsers.length > 3 && (
+                    <div
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium bg-gray-300 text-gray-700 ring-2 ring-white"
+                      title={`${activeUsers.length - 3} more users`}
+                    >
+                      +{activeUsers.length - 3}
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {/* Share Button */}
+              {hasEditAccess && (
+                <button
+                  onClick={() => setShareModalOpen(true)}
+                  className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <Share2 className="h-4 w-4" />
+                  Share
+                </button>
+              )}
+              
+              {/* Practice Button */}
+              <Link
+                href={`/conversation/${params.id}/practice?team=${selectedTeamId}`}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Play className="h-5 w-5" />
+                Practice Conversations
+              </Link>
+            </div>
           </div>
         </div>
       </header>
@@ -395,6 +454,16 @@ export default function ConversationBuilder({ params }: { params: { id: string }
           </div>
         )}
       </main>
+      
+      {/* Share Modal */}
+      {shareModalOpen && (
+        <ShareModal
+          isOpen={shareModalOpen}
+          onClose={() => setShareModalOpen(false)}
+          documentId={params.id}
+          documentName={documentName}
+        />
+      )}
     </div>
   );
 }
