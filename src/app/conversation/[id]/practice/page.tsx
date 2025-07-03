@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { Message, CoachingNote, ClientPersona, Team, ConversationTodo } from '@/lib/types';
 import { ClientPersonaSettings } from '@/components/ClientPersonaSettings';
 import { useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 // Default personas (same as in ClientPersonaSettings)
 const defaultB2BPersona: ClientPersona = {
@@ -50,6 +51,9 @@ const defaultB2BPersona: ClientPersona = {
 export default function PracticeMode({ params }: { params: { id: string } }) {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const teamFromUrl = searchParams.get('team');
+  
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [coachingNotes, setCoachingNotes] = useState<CoachingNote[]>([]);
@@ -59,7 +63,7 @@ export default function PracticeMode({ params }: { params: { id: string } }) {
   const [previewPersona, setPreviewPersona] = useState<ClientPersona | null>(null);
   const [customPersonas, setCustomPersonas] = useState<ClientPersona[]>([]);
   const [expertiseScore, setExpertiseScore] = useState(0);
-  const [selectedTeamId, setSelectedTeamId] = useState<string>('team-1');
+  const [selectedTeamId, setSelectedTeamId] = useState<string>(teamFromUrl || 'team-1');
   const [teams, setTeams] = useState<Team[]>([]);
   const [todos, setTodos] = useState<ConversationTodo[]>([]);
 

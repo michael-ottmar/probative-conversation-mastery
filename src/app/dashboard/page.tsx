@@ -134,6 +134,13 @@ export default function Dashboard() {
               Probative Conversation Mastery
             </h1>
             <div className="flex items-center gap-4">
+              <button
+                onClick={handleCreateDocument}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Plus className="h-5 w-5" />
+                New Document
+              </button>
               <div className="flex items-center gap-2">
                 <div 
                   className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium"
@@ -161,16 +168,6 @@ export default function Dashboard() {
           <p className="text-gray-600">
             Continue mastering the probative conversation across your organization
           </p>
-        </div>
-
-        <div className="mb-6 flex justify-end">
-          <button
-            onClick={handleCreateDocument}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <Plus className="h-5 w-5" />
-            New Document
-          </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -104,6 +104,8 @@ export default function ConversationBuilder({ params }: { params: { id: string }
   const [todos, setTodos] = useState<ConversationTodo[]>([]);
   const [selectedTeamId, setSelectedTeamId] = useState<string>('team-1');
   const [documentName, setDocumentName] = useState('Untitled Document');
+  const [isEditingDocumentName, setIsEditingDocumentName] = useState(false);
+  const [editedDocumentName, setEditedDocumentName] = useState('Untitled Document');
 
   // Initialize data
   useEffect(() => {
@@ -246,12 +248,50 @@ export default function ConversationBuilder({ params }: { params: { id: string }
                 <ArrowLeft className="h-5 w-5" />
               </Link>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">{documentName}</h1>
+                {isEditingDocumentName ? (
+                  <input
+                    type="text"
+                    value={editedDocumentName}
+                    onChange={(e) => setEditedDocumentName(e.target.value)}
+                    onBlur={() => {
+                      if (editedDocumentName.trim()) {
+                        setDocumentName(editedDocumentName.trim());
+                      } else {
+                        setEditedDocumentName(documentName);
+                      }
+                      setIsEditingDocumentName(false);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        if (editedDocumentName.trim()) {
+                          setDocumentName(editedDocumentName.trim());
+                        }
+                        setIsEditingDocumentName(false);
+                      }
+                      if (e.key === 'Escape') {
+                        setEditedDocumentName(documentName);
+                        setIsEditingDocumentName(false);
+                      }
+                    }}
+                    className="text-2xl font-bold text-gray-900 bg-transparent border-b-2 border-blue-500 outline-none px-1"
+                    autoFocus
+                  />
+                ) : (
+                  <h1 
+                    className="text-2xl font-bold text-gray-900 cursor-text hover:bg-gray-100 px-1 -mx-1 rounded"
+                    onClick={() => {
+                      setIsEditingDocumentName(true);
+                      setEditedDocumentName(documentName);
+                    }}
+                  >
+                    {documentName}
+                  </h1>
+                )}
                 <p className="text-sm text-gray-600">Real-time collaborative team training</p>
               </div>
             </div>
             <Link
-              href={`/conversation/${params.id}/practice`}
+              href={`/conversation/${params.id}/practice?team=${selectedTeamId}`}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Play className="h-5 w-5" />
