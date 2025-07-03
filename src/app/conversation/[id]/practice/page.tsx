@@ -63,87 +63,79 @@ export default function PracticeMode({ params }: { params: { id: string } }) {
   const [previewPersona, setPreviewPersona] = useState<ClientPersona | null>(null);
   const [customPersonas, setCustomPersonas] = useState<ClientPersona[]>([]);
   const [expertiseScore, setExpertiseScore] = useState(0);
-  const [selectedTeamId, setSelectedTeamId] = useState<string>(teamFromUrl || 'team-1');
+  const [selectedTeamId, setSelectedTeamId] = useState<string>(teamFromUrl || '');
   const [teams, setTeams] = useState<Team[]>([]);
   const [todos, setTodos] = useState<ConversationTodo[]>([]);
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
-  // Load teams and todos data
+  // Load teams and todos data from API
   useEffect(() => {
-    // Create default teams similar to conversation page
-    const defaultTeams: Team[] = [
-      {
-        id: 'team-1',
-        organizationId: '1',
-        name: 'Team 1',
-        leaders: 'Leadership Team',
-        description: '',
-        color: '#1E40AF',
-        progress: 0,
-        isRoot: true,
-      },
-      {
-        id: 'team-2',
-        organizationId: '1',
-        name: 'Team 2',
-        leaders: '',
-        description: '',
-        color: '#10B981',
-        progress: 0,
-        isRoot: false,
-        parentId: 'team-1',
-      },
-      {
-        id: 'team-3',
-        organizationId: '1',
-        name: 'Team 3',
-        leaders: '',
-        description: '',
-        color: '#F59E0B',
-        progress: 0,
-        isRoot: false,
-        parentId: 'team-1',
-      },
-      {
-        id: 'team-4',
-        organizationId: '1',
-        name: 'Team 4',
-        leaders: '',
-        description: '',
-        color: '#8B5CF6',
-        progress: 0,
-        isRoot: false,
-        parentId: 'team-1',
-      },
-    ];
-    setTeams(defaultTeams);
+    if (status === 'authenticated') {
+      fetchDocument();
+    }
+  }, [status, params.id]);
 
-    // Create todos for each team
-    const todoTemplates = [
-      { type: 'focus', title: 'Choose a Focus' },
-      { type: 'expertise', title: 'Articulate a Claim of Expertise' },
-      { type: 'perspective', title: 'Provide Your Point of View' },
-      { type: 'thesis', title: 'Publish Your Thesis' },
-      { type: 'contentMap', title: 'Develop Content Map' },
-      { type: 'leadGen', title: 'Develop Lead Gen Plan' },
-    ];
+  const fetchDocument = async () => {
+    try {
+      const response = await fetch(`/api/documents/${params.id}`);
+      if (response.ok) {
+        const doc = await response.json();
+        
+        // Transform teams to match our interface
+        const transformedTeams = doc.teams.map((team: any) => ({
+          ...team,
+          organizationId: doc.id,
+          progress: calculateTeamProgress(team.todos)
+        }));
+        setTeams(transformedTeams);
+        
+        // Transform todos to match our interface
+        const allTodos = doc.teams.flatMap((team: any) => 
+          team.todos.map((todo: any) => ({
+            ...todo,
+            conversationId: doc.id,
+            lastModified: new Date(todo.updatedAt)
+          }))
+        );
+        setTodos(allTodos);
+        
+        // Set initial selected team
+        if (teamFromUrl) {
+          // Use team from URL if provided
+          const teamExists = transformedTeams.find((t: Team) => t.id === teamFromUrl);
+          if (teamExists) {
+            setSelectedTeamId(teamFromUrl);
+          } else {
+            // Fallback to root team
+            const rootTeam = transformedTeams.find((t: Team) => t.isRoot);
+            if (rootTeam) {
+              setSelectedTeamId(rootTeam.id);
+            }
+          }
+        } else {
+          // Default to root team
+          const rootTeam = transformedTeams.find((t: Team) => t.isRoot);
+          if (rootTeam) {
+            setSelectedTeamId(rootTeam.id);
+          }
+        }
+      } else if (response.status === 404) {
+        router.push('/dashboard');
+      }
+    } catch (error) {
+      console.error('Error fetching document:', error);
+      router.push('/dashboard');
+    } finally {
+      setIsLoadingData(false);
+    }
+  };
 
-    const allTodos: ConversationTodo[] = [];
-    defaultTeams.forEach(team => {
-      todoTemplates.forEach((template, index) => {
-        allTodos.push({
-          id: `${team.id}-todo-${index}`,
-          conversationId: params.id,
-          teamId: team.id,
-          type: template.type as any,
-          title: template.title,
-          content: '',
-          status: 'not-started',
-          lastModified: new Date(),
-        });
-      });
-    });
-    setTodos(allTodos);
-  }, [params.id]);
+  const calculateTeamProgress = (todos: any[]) => {
+    const completedCount = todos.filter(t => 
+      t.status === 'complete' || t.status === 'review'
+    ).length;
+    return todos.length > 0 ? Math.round((completedCount / todos.length) * 100) : 0;
+  };
 
   // Redirect if not authenticated
   if (status === 'unauthenticated') {
@@ -151,7 +143,7 @@ export default function PracticeMode({ params }: { params: { id: string } }) {
     return null;
   }
 
-  if (status === 'loading') {
+  if (status === 'loading' || isLoadingData) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-lg">Loading...</div>
