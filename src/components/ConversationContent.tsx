@@ -58,7 +58,21 @@ export function ConversationContent({ params }: { params: { id: string } }) {
 
   const fetchDocument = async () => {
     try {
-      const response = await fetch(`/api/documents/${params.id}`);
+      let response = await fetch(`/api/documents/${params.id}`);
+      
+      // If we get a 404, it might be because we don't have access yet
+      // Try to get access via share link
+      if (response.status === 404) {
+        const accessResponse = await fetch(`/api/documents/${params.id}/access`, {
+          method: 'POST'
+        });
+        
+        if (accessResponse.ok) {
+          // Try fetching the document again
+          response = await fetch(`/api/documents/${params.id}`);
+        }
+      }
+      
       if (response.ok) {
         const doc = await response.json();
         setDocumentName(doc.name);
@@ -97,6 +111,7 @@ export function ConversationContent({ params }: { params: { id: string } }) {
         );
         setHasEditAccess(isOwner || hasEditShare);
       } else if (response.status === 404) {
+        // Document doesn't exist or access denied
         router.push('/dashboard');
       }
     } catch (error) {
