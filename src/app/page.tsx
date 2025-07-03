@@ -18,7 +18,11 @@ function HomeContent() {
   }, [status, router, callbackUrl]);
 
   const handleSignIn = () => {
-    signIn('google', { callbackUrl });
+    // Use the callbackUrl from search params if available
+    const url = callbackUrl && callbackUrl !== '/dashboard' 
+      ? callbackUrl 
+      : '/dashboard';
+    signIn('google', { callbackUrl: url });
   };
 
   if (status === 'loading') {

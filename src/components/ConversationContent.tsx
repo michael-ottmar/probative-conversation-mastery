@@ -144,7 +144,9 @@ export function ConversationContent({ params }: { params: { id: string } }) {
 
   // Redirect if not authenticated
   if (status === 'unauthenticated') {
-    router.push('/');
+    const url = new URL('/', window.location.origin);
+    url.searchParams.set('callbackUrl', `/conversation/${params.id}`);
+    router.push(url.toString());
     return null;
   }
 
