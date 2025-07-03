@@ -3,105 +3,75 @@
 import { useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { CompanyUmbrellaStructure } from '@/components/CompanyUmbrellaStructure';
-import { Organization, Team, ProbativeConversation } from '@/lib/types';
-import { Plus, ArrowRight } from 'lucide-react';
-import Link from 'next/link';
+import { Plus } from 'lucide-react';
+import { DocumentCard } from '@/components/DocumentCard';
+import { ShareModal } from '@/components/ShareModal';
+import { getAvatarColor } from '@/lib/avatar';
 
-// Mock data - replace with actual data fetching
-const mockOrganization: Organization = {
-  id: '1',
-  name: 'Acme Consulting',
-  description: 'Strategic transformation experts for enterprise organizations',
-  industry: 'Professional Services',
-  createdAt: new Date()
-};
+interface Document {
+  id: string;
+  name: string;
+  practiceCount: number;
+  teamCount: number;
+  lastEdited: Date;
+  activeUsers: Array<{
+    id: string;
+    name?: string;
+    email: string;
+    color: string;
+  }>;
+}
 
-const mockTeams: Team[] = [
-  {
-    id: 'umbrella',
-    organizationId: '1',
-    name: 'Company Umbrella',
-    leaders: ['John Walsh', 'Jane Blackstone'],
-    description: 'Holistic business transformation through integrated expertise',
-    color: '#1E40AF',
-    progress: 65,
-    isRoot: true,
-    expertiseDomain: 'Enterprise Transformation'
-  },
-  {
-    id: 'creative',
-    organizationId: '1',
-    name: 'Creative Studio',
-    leaders: ['Sarah Chen'],
-    color: '#F59E0B',
-    progress: 80,
-    isRoot: false,
-    parentId: 'umbrella',
-    expertiseDomain: 'Brand Strategy & Design'
-  },
-  {
-    id: 'managed',
-    organizationId: '1',
-    name: 'Managed Services',
-    leaders: ['Mike Ross'],
-    color: '#10B981',
-    progress: 45,
-    isRoot: false,
-    parentId: 'umbrella',
-    expertiseDomain: 'Operational Excellence'
-  },
-  {
-    id: 'orchestration',
-    organizationId: '1',
-    name: 'Orchestration & Discovery',
-    leaders: ['Lisa Park'],
-    color: '#8B5CF6',
-    progress: 30,
-    isRoot: false,
-    parentId: 'umbrella',
-    expertiseDomain: 'Strategic Planning'
-  }
-];
-
-const mockConversations: ProbativeConversation[] = [
+// Mock data - will be replaced with real data
+const mockDocuments: Document[] = [
   {
     id: '1',
-    organizationId: '1',
-    teams: ['umbrella', 'creative', 'managed', 'orchestration'],
-    objective: 'To prove your expertise to the client and move, in their mind, from vendor to expert',
-    todos: [],
-    practiceSettings: {
-      focusArea: 'Company Holistic Conversation',
-      clientType: 'Enterprise B2B',
-      clientPersona: {
-        id: '1',
-        name: 'Enterprise B2B',
-        industry: 'Technology',
-        companySize: '5000+',
-        currentMindset: 'vendor-seeking',
-        sophisticationLevel: 'high',
-        typicalObjections: ['Price concerns', 'Integration complexity'],
-        valueDrivers: ['Innovation', 'Scalability', 'Risk mitigation']
-      },
-      conversationContext: 'Initial probative conversation'
-    },
-    organizationalNarrative: {
-      id: '1',
-      umbrellaValue: 'Integrated transformation expertise',
-      teamSynergies: [],
-      unifiedThesis: 'True transformation requires coordinated expertise across strategy, operations, and brand'
-    },
-    sharedWith: [],
-    createdBy: 'user@example.com',
-    createdAt: new Date()
-  }
+    name: 'Q4 Enterprise Sales Strategy',
+    practiceCount: 22,
+    teamCount: 4,
+    lastEdited: new Date(Date.now() - 15 * 60 * 1000), // 15 minutes ago
+    activeUsers: [
+      { id: '1', name: 'Sarah Johnson', email: 'sarah@acme.com', color: getAvatarColor('sarah@acme.com') },
+      { id: '2', name: 'John Walsh', email: 'john@acme.com', color: getAvatarColor('john@acme.com') },
+      { id: '3', email: 'mike@acme.com', color: getAvatarColor('mike@acme.com') },
+    ],
+  },
+  {
+    id: '2',
+    name: 'Healthcare Vertical Positioning',
+    practiceCount: 16,
+    teamCount: 5,
+    lastEdited: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
+    activeUsers: [
+      { id: '3', email: 'mike@acme.com', color: getAvatarColor('mike@acme.com') },
+    ],
+  },
+  {
+    id: '3',
+    name: 'Digital Transformation Pitch',
+    practiceCount: 3,
+    teamCount: 6,
+    lastEdited: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 1 month ago
+    activeUsers: [],
+  },
+  {
+    id: '4',
+    name: 'Financial Services Expertise',
+    practiceCount: 13,
+    teamCount: 4,
+    lastEdited: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+    activeUsers: [
+      { id: '4', name: 'Lisa Park', email: 'lisa@acme.com', color: getAvatarColor('lisa@acme.com') },
+    ],
+  },
 ];
 
 export default function Dashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [selectedTeamId, setSelectedTeamId] = useState<string>('umbrella');
+  const [documents, setDocuments] = useState(mockDocuments);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
 
   // Redirect if not authenticated
   if (status === 'unauthenticated') {
@@ -117,16 +87,61 @@ export default function Dashboard() {
     );
   }
 
+  const handleCreateDocument = () => {
+    const newDoc: Document = {
+      id: Date.now().toString(),
+      name: 'Untitled Document',
+      practiceCount: 0,
+      teamCount: 0,
+      lastEdited: new Date(),
+      activeUsers: session?.user ? [{
+        id: session.user.id || '1',
+        name: session.user.name || undefined,
+        email: session.user.email || '',
+        color: getAvatarColor(session.user.email || ''),
+      }] : [],
+    };
+    setDocuments([newDoc, ...documents]);
+    router.push(`/conversation/${newDoc.id}`);
+  };
+
+  const handleShare = (docId: string) => {
+    const doc = documents.find(d => d.id === docId);
+    if (doc) {
+      setSelectedDocument(doc);
+      setShareModalOpen(true);
+    }
+  };
+
+  const handleDelete = (docId: string) => {
+    if (confirm('Are you sure you want to delete this document?')) {
+      setDocuments(documents.filter(d => d.id !== docId));
+    }
+  };
+
+  const handleRename = (docId: string, newName: string) => {
+    setDocuments(documents.map(doc => 
+      doc.id === docId ? { ...doc, name: newName } : doc
+    ));
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="container mx-auto px-4 py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
             <h1 className="text-2xl font-bold text-gray-900">
               Probative Conversation Mastery
             </h1>
             <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">{session?.user?.email}</span>
+              <div className="flex items-center gap-2">
+                <div 
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium"
+                  style={{ backgroundColor: getAvatarColor(session?.user?.email || '') }}
+                >
+                  {session?.user?.name?.charAt(0) || session?.user?.email?.charAt(0) || 'U'}
+                </div>
+              </div>
               <button 
                 onClick={() => signOut()}
                 className="text-sm text-gray-600 hover:text-gray-900"
@@ -138,7 +153,7 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
             Welcome back{session?.user?.name ? `, ${session.user.name.split(' ')[0]}` : ''}
@@ -148,79 +163,53 @@ export default function Dashboard() {
           </p>
         </div>
 
-        <CompanyUmbrellaStructure
-          organization={mockOrganization}
-          teams={mockTeams}
-          selectedTeamId={selectedTeamId}
-          onTeamSelect={setSelectedTeamId}
-          onAddTeam={() => console.log('Add team')}
-        />
-
-        <div className="mt-8 grid lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Active Conversations
-            </h3>
-            <div className="space-y-3">
-              {mockConversations.map((conv) => (
-                <Link
-                  key={conv.id}
-                  href={`/conversation/${conv.id}`}
-                  className="block p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-medium text-gray-900">
-                        {conv.practiceSettings.focusArea}
-                      </p>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {conv.teams.length} teams participating
-                      </p>
-                    </div>
-                    <ArrowRight className="h-5 w-5 text-gray-400" />
-                  </div>
-                </Link>
-              ))}
-              <button className="w-full p-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-400 hover:text-gray-900 transition-colors flex items-center justify-center gap-2">
-                <Plus className="h-5 w-5" />
-                Create New Conversation
-              </button>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Organizational Progress
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-600">Overall Expertise Articulation</span>
-                  <span className="font-medium">55%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-blue-600 h-2 rounded-full" style={{ width: '55%' }} />
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-600">Cross-Team Coherence</span>
-                  <span className="font-medium">42%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-green-600 h-2 rounded-full" style={{ width: '42%' }} />
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-600">Practice Sessions Completed</span>
-                  <span className="font-medium">18</span>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div className="mb-6 flex justify-end">
+          <button
+            onClick={handleCreateDocument}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Plus className="h-5 w-5" />
+            New Document
+          </button>
         </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {documents.map((doc) => (
+            <DocumentCard
+              key={doc.id}
+              {...doc}
+              onShare={handleShare}
+              onDelete={handleDelete}
+              onRename={handleRename}
+            />
+          ))}
+        </div>
+
+        {documents.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-gray-500 mb-4">No documents yet</p>
+            <button
+              onClick={handleCreateDocument}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="h-5 w-5" />
+              Create your first document
+            </button>
+          </div>
+        )}
       </main>
+
+      {selectedDocument && (
+        <ShareModal
+          isOpen={shareModalOpen}
+          onClose={() => {
+            setShareModalOpen(false);
+            setSelectedDocument(null);
+          }}
+          documentName={selectedDocument.name}
+          documentId={selectedDocument.id}
+        />
+      )}
     </div>
   );
 }
