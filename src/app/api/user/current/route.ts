@@ -3,6 +3,9 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import { prisma } from '@/lib/prisma';
 
+// Force dynamic rendering since we use authentication
+export const dynamic = 'force-dynamic';
+
 // GET /api/user/current - Get the current user's ID
 export async function GET(request: NextRequest) {
   try {
