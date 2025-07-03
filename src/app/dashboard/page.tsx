@@ -95,7 +95,7 @@ export default function Dashboard() {
       teamCount: 0,
       lastEdited: new Date(),
       activeUsers: session?.user ? [{
-        id: session.user.id || '1',
+        id: (session.user as any).id || '1',
         name: session.user.name || undefined,
         email: session.user.email || '',
         color: getAvatarColor(session.user.email || ''),
