@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Plus } from 'lucide-react';
@@ -69,7 +69,8 @@ const mockDocuments: Document[] = [
 export default function Dashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [documents, setDocuments] = useState(mockDocuments);
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
 
@@ -79,7 +80,28 @@ export default function Dashboard() {
     return null;
   }
 
-  if (status === 'loading') {
+  // Fetch documents on component mount
+  useEffect(() => {
+    if (status === 'authenticated') {
+      fetchDocuments();
+    }
+  }, [status]);
+
+  const fetchDocuments = async () => {
+    try {
+      const response = await fetch('/api/documents');
+      if (response.ok) {
+        const data = await response.json();
+        setDocuments(data);
+      }
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (status === 'loading' || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-lg">Loading...</div>
@@ -87,22 +109,21 @@ export default function Dashboard() {
     );
   }
 
-  const handleCreateDocument = () => {
-    const newDoc: Document = {
-      id: Date.now().toString(),
-      name: 'Untitled Document',
-      practiceCount: 0,
-      teamCount: 0,
-      lastEdited: new Date(),
-      activeUsers: session?.user ? [{
-        id: (session.user as any).id || '1',
-        name: session.user.name || undefined,
-        email: session.user.email || '',
-        color: getAvatarColor(session.user.email || ''),
-      }] : [],
-    };
-    setDocuments([newDoc, ...documents]);
-    router.push(`/conversation/${newDoc.id}`);
+  const handleCreateDocument = async () => {
+    try {
+      const response = await fetch('/api/documents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'Untitled Document' })
+      });
+      
+      if (response.ok) {
+        const newDoc = await response.json();
+        router.push(`/conversation/${newDoc.id}`);
+      }
+    } catch (error) {
+      console.error('Error creating document:', error);
+    }
   };
 
   const handleShare = (docId: string) => {
@@ -113,16 +134,38 @@ export default function Dashboard() {
     }
   };
 
-  const handleDelete = (docId: string) => {
+  const handleDelete = async (docId: string) => {
     if (confirm('Are you sure you want to delete this document?')) {
-      setDocuments(documents.filter(d => d.id !== docId));
+      try {
+        const response = await fetch(`/api/documents/${docId}`, {
+          method: 'DELETE'
+        });
+        
+        if (response.ok) {
+          setDocuments(documents.filter(d => d.id !== docId));
+        }
+      } catch (error) {
+        console.error('Error deleting document:', error);
+      }
     }
   };
 
-  const handleRename = (docId: string, newName: string) => {
-    setDocuments(documents.map(doc => 
-      doc.id === docId ? { ...doc, name: newName } : doc
-    ));
+  const handleRename = async (docId: string, newName: string) => {
+    try {
+      const response = await fetch(`/api/documents/${docId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newName })
+      });
+      
+      if (response.ok) {
+        setDocuments(documents.map(doc => 
+          doc.id === docId ? { ...doc, name: newName } : doc
+        ));
+      }
+    } catch (error) {
+      console.error('Error renaming document:', error);
+    }
   };
 
   return (
