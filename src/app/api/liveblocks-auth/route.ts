@@ -5,12 +5,20 @@ import { authOptions } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { getAvatarColor } from '@/lib/avatar';
 
-const liveblocks = new Liveblocks({
-  secret: process.env.LIVEBLOCKS_SECRET_KEY!,
-});
-
 export async function POST(request: NextRequest) {
   try {
+    // Check if Liveblocks secret key is configured
+    if (!process.env.LIVEBLOCKS_SECRET_KEY) {
+      console.warn('LIVEBLOCKS_SECRET_KEY not configured');
+      return NextResponse.json(
+        { error: 'Liveblocks not configured' },
+        { status: 503 }
+      );
+    }
+
+    const liveblocks = new Liveblocks({
+      secret: process.env.LIVEBLOCKS_SECRET_KEY,
+    });
     // Get the current user's session
     const session = await getServerSession(authOptions);
 
