@@ -8,15 +8,9 @@ export default withAuth(
   },
   {
     callbacks: {
-      authorized: ({ req, token }) => {
-        // If trying to access a conversation page without auth
-        if (req.nextUrl.pathname.startsWith("/conversation") && !token) {
-          // Redirect to home with the original URL as callback
-          const url = new URL("/", req.url);
-          url.searchParams.set("callbackUrl", req.nextUrl.pathname);
-          return false;
-        }
-        return true;
+      authorized: ({ token }) => {
+        // Return true if user is authenticated
+        return !!token;
       },
     },
     pages: {

@@ -24,7 +24,11 @@ export const authOptions: NextAuthOptions = {
       // Allows callback URLs on the same origin
       else if (new URL(url).origin === baseUrl) return url;
       // Default redirect to dashboard
-      return baseUrl + "/dashboard";
+      return `${baseUrl}/dashboard`;
+    },
+    async signIn({ user, account, profile }) {
+      // Always allow sign in
+      return true;
     },
   },
   pages: {

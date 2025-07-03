@@ -13,7 +13,7 @@ function HomeContent() {
   useEffect(() => {
     if (status === 'authenticated') {
       // Redirect to the callback URL or dashboard
-      router.push(callbackUrl);
+      router.replace(callbackUrl);
     }
   }, [status, router, callbackUrl]);
 
