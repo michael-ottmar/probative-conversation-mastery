@@ -53,7 +53,7 @@ export interface ConversationTodo {
   type: 'focus' | 'expertise' | 'perspective' | 'thesis' | 'contentMap' | 'leadGen';
   title: string;
   content?: string;
-  status: 'not-started' | 'in-progress' | 'complete';
+  status: 'not-started' | 'in-progress' | 'complete' | 'review';
   aiIdea?: AIIdea; // Current AI suggestion
   lastModified: Date;
 }

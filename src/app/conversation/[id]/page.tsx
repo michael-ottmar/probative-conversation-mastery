@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { CompanyStructure } from '@/components/CompanyStructure';
 import { TodoItem } from '@/components/TodoItem';
+import { TeamDetails } from '@/components/TeamDetails';
 import { Organization, Team, ConversationTodo, AIIdea } from '@/lib/types';
 import { ArrowLeft, Play } from 'lucide-react';
 import Link from 'next/link';
@@ -162,9 +163,10 @@ export default function ConversationBuilder({ params }: { params: { id: string }
     
     // Update team progress
     const teamTodos = todos.filter(t => t.teamId === updatedTodo.teamId);
-    const completedCount = teamTodos.filter(t => 
-      t.id === updatedTodo.id ? updatedTodo.status === 'complete' : t.status === 'complete'
-    ).length;
+    const completedCount = teamTodos.filter(t => {
+      const status = t.id === updatedTodo.id ? updatedTodo.status : t.status;
+      return status === 'complete' || status === 'review';
+    }).length;
     const progress = Math.round((completedCount / teamTodos.length) * 100);
     
     setTeams(teams.map(team => 
@@ -237,7 +239,7 @@ export default function ConversationBuilder({ params }: { params: { id: string }
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         <CompanyStructure
           teams={teams}
           selectedTeamId={selectedTeamId}
@@ -248,9 +250,16 @@ export default function ConversationBuilder({ params }: { params: { id: string }
         />
 
         {selectedTeam && (
+          <TeamDetails
+            team={selectedTeam}
+            onUpdate={handleTeamUpdate}
+          />
+        )}
+
+        {selectedTeam && (
           <div className="bg-white rounded-lg p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-6">
-              Probative Conversation To-Do\'s
+              Probative Conversation To-Do's
             </h2>
             <div className="space-y-6">
               {teamTodos.map((todo) => (

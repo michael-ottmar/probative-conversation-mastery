@@ -14,6 +14,7 @@ interface TodoItemProps {
 const statusOptions = [
   { value: 'not-started', label: 'Not Started', color: 'bg-gray-100 text-gray-700' },
   { value: 'in-progress', label: 'In Progress', color: 'bg-yellow-100 text-yellow-700' },
+  { value: 'review', label: 'Review', color: 'bg-blue-100 text-blue-700' },
   { value: 'complete', label: 'Complete', color: 'bg-green-100 text-green-700' },
 ];
 
@@ -46,14 +47,14 @@ export function TodoItem({ todo, team, onUpdate, onGenerateIdea }: TodoItemProps
   const currentStatus = statusOptions.find(s => s.value === todo.status);
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
+    <div className="border-b border-gray-200 pb-6 last:border-0">
       <div className="flex justify-between items-start mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">{todo.title}</h3>
+        <h3 className="text-base font-medium text-gray-900">{todo.title}</h3>
         <div className="flex items-center gap-2">
           <button
             onClick={handleGenerateIdea}
             disabled={isGenerating}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
           >
             <Sparkles className="h-4 w-4" />
             {isGenerating ? 'Generating...' : 'Generate Ideas'}
@@ -62,10 +63,9 @@ export function TodoItem({ todo, team, onUpdate, onGenerateIdea }: TodoItemProps
           <div className="relative">
             <button
               onClick={() => setShowStatusDropdown(!showStatusDropdown)}
-              className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg ${currentStatus?.color}`}
+              className={`px-3 py-1.5 text-sm rounded-lg ${currentStatus?.color}`}
             >
               {currentStatus?.label}
-              <ChevronDown className="h-4 w-4" />
             </button>
             
             {showStatusDropdown && (
@@ -133,12 +133,12 @@ export function TodoItem({ todo, team, onUpdate, onGenerateIdea }: TodoItemProps
       ) : (
         <div
           onClick={() => setIsEditing(true)}
-          className="min-h-[120px] px-4 py-3 bg-gray-50 rounded-lg cursor-text hover:bg-gray-100 transition-colors"
+          className="min-h-[80px] px-4 py-3 bg-gray-50 rounded-lg cursor-text hover:bg-gray-100 transition-colors"
         >
           {todo.content ? (
             <p className="text-gray-700 whitespace-pre-wrap">{todo.content}</p>
           ) : (
-            <p className="text-gray-400">Enter your {todo.type} here...</p>
+            <p className="text-gray-400 text-sm">Enter your {todo.type} here...</p>
           )}
         </div>
       )}

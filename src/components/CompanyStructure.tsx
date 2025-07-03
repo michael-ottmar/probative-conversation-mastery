@@ -1,9 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import { Team } from '@/lib/types';
-import { TeamCard } from './TeamCard';
 
 interface CompanyStructureProps {
   teams: Team[];
@@ -24,7 +23,6 @@ export function CompanyStructure({
 }: CompanyStructureProps) {
   const rootTeam = teams.find(t => t.isRoot);
   const childTeams = teams.filter(t => !t.isRoot);
-  const selectedTeam = teams.find(t => t.id === selectedTeamId);
   
   // Calculate overall progress
   const overallProgress = Math.round(
@@ -35,64 +33,87 @@ export function CompanyStructure({
     <div className="bg-white rounded-lg p-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-900">Company Umbrella Structure</h2>
-        <div className="flex items-center gap-4">
-          <div className="text-right">
-            <div className="text-3xl font-bold text-gray-900">{overallProgress}%</div>
-            <div className="text-sm text-gray-600">Overall Progress</div>
+        <button
+          onClick={onTeamAdd}
+          className="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors"
+          title="Add Team"
+        >
+          <Plus className="h-5 w-5" />
+        </button>
+      </div>
+
+      {/* Visual Team Hierarchy */}
+      <div className="space-y-4">
+        {/* Root Team - Company Umbrella */}
+        {rootTeam && (
+          <div className="flex justify-center mb-4">
+            <button
+              onClick={() => onTeamSelect(rootTeam.id)}
+              className={`px-6 py-4 rounded-lg transition-all ${
+                selectedTeamId === rootTeam.id
+                  ? 'bg-slate-700 text-white ring-4 ring-blue-500'
+                  : 'bg-slate-600 text-white hover:bg-slate-700'
+              }`}
+            >
+              <div className="font-semibold">{rootTeam.name}</div>
+              <div className="text-sm opacity-90 mt-1">{rootTeam.leaders || 'Orchestration Team'}</div>
+              <div className="text-xs mt-2">{rootTeam.progress}% Complete</div>
+            </button>
           </div>
-          <button
-            onClick={onTeamAdd}
-            className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            title="Add Team"
-          >
-            <Plus className="h-5 w-5" />
-          </button>
+        )}
+
+        {/* Child Teams */}
+        <div className="flex justify-center gap-4 flex-wrap">
+          {childTeams.map((team) => (
+            <button
+              key={team.id}
+              onClick={() => onTeamSelect(team.id)}
+              onMouseEnter={(e) => {
+                if (!team.isRoot) {
+                  const deleteBtn = e.currentTarget.querySelector('.delete-btn');
+                  if (deleteBtn) deleteBtn.classList.remove('opacity-0');
+                }
+              }}
+              onMouseLeave={(e) => {
+                const deleteBtn = e.currentTarget.querySelector('.delete-btn');
+                if (deleteBtn) deleteBtn.classList.add('opacity-0');
+              }}
+              className={`relative px-6 py-4 rounded-lg transition-all ${
+                selectedTeamId === team.id
+                  ? 'ring-4 ring-blue-500'
+                  : 'hover:shadow-md'
+              }`}
+              style={{ 
+                backgroundColor: selectedTeamId === team.id ? team.color : 'white',
+                color: selectedTeamId === team.id ? 'white' : team.color,
+                borderColor: team.color,
+                borderWidth: '2px',
+                borderStyle: 'solid'
+              }}
+            >
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (confirm(`Are you sure you want to delete the "${team.name}" team?`)) {
+                    onTeamDelete(team.id);
+                  }
+                }}
+                className="delete-btn absolute top-2 right-2 p-1 bg-white/20 rounded hover:bg-white/30 transition-all opacity-0"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <div className="font-semibold">{team.name}</div>
+              <div className="text-sm mt-1">{team.leaders || 'Team leaders'}</div>
+              <div className="text-xs mt-2">{team.progress}% Complete</div>
+            </button>
+          ))}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Team Hierarchy */}
-        <div className="space-y-4">
-          {/* Root Team */}
-          {rootTeam && (
-            <div>
-              <TeamCard
-                team={rootTeam}
-                isSelected={selectedTeamId === rootTeam.id}
-                onSelect={onTeamSelect}
-                onUpdate={onTeamUpdate}
-                onDelete={onTeamDelete}
-              />
-            </div>
-          )}
-
-          {/* Child Teams */}
-          <div className="grid grid-cols-2 gap-3">
-            {childTeams.map((team) => (
-              <TeamCard
-                key={team.id}
-                team={team}
-                isSelected={selectedTeamId === team.id}
-                onSelect={onTeamSelect}
-                onUpdate={onTeamUpdate}
-                onDelete={onTeamDelete}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Selected Team Details */}
-        <div>
-          {selectedTeam && (
-            <TeamCard
-              team={selectedTeam}
-              isSelected={true}
-              onSelect={onTeamSelect}
-              onUpdate={onTeamUpdate}
-              onDelete={onTeamDelete}
-            />
-          )}
-        </div>
+      {/* Overall Progress */}
+      <div className="text-right mt-6 pt-6 border-t border-gray-200">
+        <div className="text-3xl font-bold text-blue-600">{overallProgress}%</div>
+        <div className="text-sm text-gray-600">Overall Progress</div>
       </div>
     </div>
   );
