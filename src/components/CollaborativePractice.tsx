@@ -280,9 +280,9 @@ export function CollaborativePractice({ conversationId, documentName }: Collabor
                   <div
                     key={participant.userId}
                     className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center text-sm font-medium border-2 border-white"
-                    title={participant.userName}
+                    title={participant.userName || 'User'}
                   >
-                    {participant.userName[0].toUpperCase()}
+                    {(participant.userName?.[0] || 'U').toUpperCase()}
                   </div>
                 ))}
                 {participants.length > 3 && (

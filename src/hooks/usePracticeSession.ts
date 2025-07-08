@@ -49,7 +49,7 @@ export function usePracticeSession(documentId: string) {
           isActive: true,
           participants: [{
             userId: self.presence.user.id,
-            userName: self.presence.user.name,
+            userName: self.presence.user.name || 'User',
             joinedAt: Date.now()
           }]
         });
@@ -61,7 +61,7 @@ export function usePracticeSession(documentId: string) {
         if (!alreadyJoined) {
           participants.push({
             userId: self.presence.user.id,
-            userName: self.presence.user.name,
+            userName: self.presence.user.name || 'User',
             joinedAt: Date.now()
           });
         }
@@ -70,7 +70,7 @@ export function usePracticeSession(documentId: string) {
       // Broadcast join event
       broadcast({
         type: 'PRACTICE_USER_JOINED',
-        userName: self.presence.user.name
+        userName: self.presence.user.name || 'User'
       });
     },
     []
@@ -151,7 +151,7 @@ export function usePracticeSession(documentId: string) {
       // Broadcast leave event
       broadcast({
         type: 'PRACTICE_USER_LEFT',
-        userName: self.presence.user.name
+        userName: self.presence.user.name || 'User'
       });
     },
     []
@@ -164,7 +164,7 @@ export function usePracticeSession(documentId: string) {
     if (self) {
       broadcast({
         type: 'PRACTICE_TYPING',
-        userName: self.presence.user.name,
+        userName: self.presence.user.name || 'User',
         isTyping
       });
     }
