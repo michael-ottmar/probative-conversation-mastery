@@ -244,7 +244,8 @@ export function CollaborativePractice({ conversationId, documentName }: Collabor
         body: JSON.stringify({
           conversationHistory: messages.map(m => ({
             role: m.role,
-            content: m.content
+            content: m.content,
+            clientName: m.clientName
           })),
           userMessage,
           clientPersona: clientPersona || defaultB2BPersona,
@@ -408,7 +409,10 @@ export function CollaborativePractice({ conversationId, documentName }: Collabor
                         email={self?.presence.user.email || session?.user?.email}
                       />
                     ) : (
-                      <div className="w-8 h-8 rounded-full bg-gray-300 text-gray-700 flex items-center justify-center">
+                      <div 
+                        className="w-8 h-8 rounded-full bg-gray-300 text-gray-700 flex items-center justify-center"
+                        style={{ borderRadius: '9999px' }}
+                      >
                         <Bot className="h-4 w-4" />
                       </div>
                     )}

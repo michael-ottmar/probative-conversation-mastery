@@ -22,7 +22,10 @@ export function UserAvatar({ name, email, size = 'md', className = '' }: UserAva
   return (
     <div
       className={`rounded-full flex items-center justify-center text-white font-medium ${sizeClasses[size]} ${className}`}
-      style={{ backgroundColor }}
+      style={{ 
+        backgroundColor,
+        borderRadius: '9999px' // Ensure circular shape with inline style as fallback
+      }}
       title={name || email || 'User'}
     >
       {displayInitials}

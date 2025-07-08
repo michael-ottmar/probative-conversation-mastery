@@ -25,19 +25,26 @@ ${allTeams.map((t: any) => `- ${t.name}: ${t.description || 'No description prov
 Feel free to naturally inquire about or reference other teams' capabilities when relevant to your needs. For example, if discussing a challenge that might benefit from another team's expertise, you might ask "Do you also handle [related area]?" or mention "We're also looking at [related need] - is that something your organization covers?"
 ` : '';
 
-    // Generate a realistic name for the client - use timestamp to ensure uniqueness per conversation
+    // Generate a realistic name for the client
     const clientNames: Record<string, string[]> = {
       'B2B Enterprise Client': ['Sarah Chen', 'Michael Rodriguez', 'Jennifer Walsh', 'David Kumar', 'Lisa Thompson', 'Robert Kim', 'Emily Davis', 'James Wilson', 'Patricia Moore', 'Daniel Taylor'],
       'SMB Owner': ['Tom Anderson', 'Maria Garcia', 'John Smith', 'Amy Lee', 'Robert Johnson', 'Susan Martinez', 'William Brown', 'Linda Davis', 'Richard Miller', 'Barbara Wilson'],
       'Startup Founder': ['Alex Kim', 'Sam Taylor', 'Jordan Martinez', 'Riley Chen', 'Casey Williams', 'Morgan Lee', 'Drew Parker', 'Avery Quinn', 'Blake Foster', 'Cameron Hughes']
     };
     
-    const namePool = clientNames[clientPersona.name] || ['Chris Morgan', 'Pat Taylor', 'Jamie Brown'];
-    // Use conversation history length as a seed for consistent name within conversation
-    const nameIndex = conversationHistory.length === 0 
-      ? Math.floor(Math.random() * namePool.length)
-      : conversationHistory.length % namePool.length;
-    const clientName = namePool[nameIndex];
+    // Check if a name was already established in the conversation
+    let clientName: string;
+    const existingClientMessage = conversationHistory.find((msg: any) => msg.role === 'client' && msg.clientName);
+    
+    if (existingClientMessage) {
+      // Use the existing client name to maintain consistency
+      clientName = existingClientMessage.clientName;
+    } else {
+      // First message from client - generate a random name
+      const namePool = clientNames[clientPersona.name] || ['Chris Morgan', 'Pat Taylor', 'Jamie Brown'];
+      const nameIndex = Math.floor(Math.random() * namePool.length);
+      clientName = namePool[nameIndex];
+    }
 
     // Build the system prompt based on the client persona
     const systemPrompt = `You are roleplaying as a potential client in a business conversation. Your goal is to realistically portray the following persona:
