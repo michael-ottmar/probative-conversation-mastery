@@ -1,17 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
+  let conversationHistory: any;
+  let clientPersona: any;
+  
+  // Define name pools outside try block for error handling access
+  const clientNames: Record<string, string[]> = {
+    'B2B Enterprise Client': ['Sarah Chen', 'Michael Rodriguez', 'Jennifer Walsh', 'David Kumar', 'Lisa Thompson', 'Robert Kim', 'Emily Davis', 'James Wilson', 'Patricia Moore', 'Daniel Taylor'],
+    'SMB Owner': ['Tom Anderson', 'Maria Garcia', 'John Smith', 'Amy Lee', 'Robert Johnson', 'Susan Martinez', 'William Brown', 'Linda Davis', 'Richard Miller', 'Barbara Wilson'],
+    'Startup Founder': ['Alex Kim', 'Sam Taylor', 'Jordan Martinez', 'Riley Chen', 'Casey Williams', 'Morgan Lee', 'Drew Parker', 'Avery Quinn', 'Blake Foster', 'Cameron Hughes']
+  };
+  
+  // Default fallback names if persona name doesn't match
+  const defaultNames = ['Chris Morgan', 'Pat Taylor', 'Jamie Brown', 'Morgan Davis', 'Casey Wilson'];
+  
   try {
+    const requestData = await request.json();
+    conversationHistory = requestData.conversationHistory;
+    clientPersona = requestData.clientPersona;
     const { 
-      conversationHistory, 
       userMessage,
-      clientPersona, 
       team,
       todos,
       allTeams,
       expertiseScore,
       isInitialMessage = false
-    } = await request.json();
+    } = requestData;
 
     // Build organization context for the AI
     const organizationContext = allTeams ? `
@@ -25,16 +39,6 @@ ${allTeams.map((t: any) => `- ${t.name}: ${t.description || 'No description prov
 Feel free to naturally inquire about or reference other teams' capabilities when relevant to your needs. For example, if discussing a challenge that might benefit from another team's expertise, you might ask "Do you also handle [related area]?" or mention "We're also looking at [related need] - is that something your organization covers?"
 ` : '';
 
-    // Generate a realistic name for the client
-    const clientNames: Record<string, string[]> = {
-      'B2B Enterprise Client': ['Sarah Chen', 'Michael Rodriguez', 'Jennifer Walsh', 'David Kumar', 'Lisa Thompson', 'Robert Kim', 'Emily Davis', 'James Wilson', 'Patricia Moore', 'Daniel Taylor'],
-      'SMB Owner': ['Tom Anderson', 'Maria Garcia', 'John Smith', 'Amy Lee', 'Robert Johnson', 'Susan Martinez', 'William Brown', 'Linda Davis', 'Richard Miller', 'Barbara Wilson'],
-      'Startup Founder': ['Alex Kim', 'Sam Taylor', 'Jordan Martinez', 'Riley Chen', 'Casey Williams', 'Morgan Lee', 'Drew Parker', 'Avery Quinn', 'Blake Foster', 'Cameron Hughes']
-    };
-    
-    // Default fallback names if persona name doesn't match
-    const defaultNames = ['Chris Morgan', 'Pat Taylor', 'Jamie Brown', 'Morgan Davis', 'Casey Wilson'];
-    
     // Check if a name was already established in the conversation
     let clientName: string;
     const existingClientMessage = conversationHistory.find((msg: any) => msg.role === 'client' && msg.clientName);
