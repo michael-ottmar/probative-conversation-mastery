@@ -10,6 +10,7 @@ import { ClientPersonaSettings } from '@/components/ClientPersonaSettings';
 import { usePracticeSession } from '@/hooks/usePracticeSession';
 import { useSearchParams } from 'next/navigation';
 import { getAvatarColor } from '@/lib/avatar';
+import { useSelf } from '@/lib/liveblocks';
 
 // Default B2B persona (same as original)
 const defaultB2BPersona: ClientPersona = {
@@ -60,6 +61,7 @@ export function CollaborativePractice({ conversationId, documentName }: Collabor
   const searchParams = useSearchParams();
   const teamFromUrl = searchParams.get('team');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const self = useSelf();
   
   const {
     practiceSession,
@@ -260,50 +262,66 @@ export function CollaborativePractice({ conversationId, documentName }: Collabor
     <div className="h-screen flex flex-col bg-gray-50">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-6 py-4">
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-4">
-              <Link
-                href={`/conversation/${conversationId}`}
-                className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
-              >
-                <ArrowLeft className="h-5 w-5" />
-                Back to {documentName}
-              </Link>
-              <h1 className="text-xl font-semibold">Practice Conversation</h1>
-              
-              {/* Team and Client Info */}
-              <div className="flex items-center gap-4 text-sm text-gray-600">
-                {selectedTeamId && teams.length > 0 && (
-                  <div className="flex items-center gap-1">
-                    <span className="font-medium">Team:</span>
-                    <span className="text-gray-900">{teams.find(t => t.id === selectedTeamId)?.name || 'Unknown'}</span>
-                  </div>
-                )}
-                {clientPersona && (
+        <div className="flex items-center justify-between">
+          {/* Left side - Back button */}
+          <div className="flex-1">
+            <Link
+              href={`/conversation/${conversationId}`}
+              className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900"
+            >
+              <ArrowLeft className="h-5 w-5" />
+              Back to {documentName}
+            </Link>
+          </div>
+          
+          {/* Center - Title and Team/Client info */}
+          <div className="flex flex-col items-center">
+            <h1 className="text-xl font-semibold mb-1">Practice Conversation</h1>
+            
+            {/* Team and Client Info */}
+            <div className="flex items-center gap-4 text-sm text-gray-600">
+              {selectedTeamId && teams.length > 0 && (
+                <div className="flex items-center gap-1">
+                  <span className="font-medium">Team:</span>
+                  <span className="text-gray-900">{teams.find(t => t.id === selectedTeamId)?.name || 'Unknown'}</span>
+                </div>
+              )}
+              {clientPersona && (
+                <>
+                  <span className="text-gray-400">•</span>
                   <div className="flex items-center gap-1">
                     <span className="font-medium">Client:</span>
                     <span className="text-gray-900">{clientPersona.name}</span>
                   </div>
-                )}
-              </div>
+                </>
+              )}
             </div>
-            
-            <div className="flex items-center gap-4">
+          </div>
+          
+          {/* Right side - Participants and Settings */}
+          <div className="flex-1 flex items-center justify-end gap-4">
             {/* Participants */}
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5 text-gray-600" />
               <div className="flex -space-x-2">
-                {participants.slice(0, 3).map((participant, index) => (
-                  <div
-                    key={participant.userId}
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium ring-2 ring-white"
-                    style={{ backgroundColor: getAvatarColor(participant.userId || participant.userName || '') }}
-                    title={participant.userName || 'User'}
-                  >
-                    {(participant.userName || 'U').charAt(0).toUpperCase()}
-                  </div>
-                ))}
+                {participants.slice(0, 3).map((participant, index) => {
+                  // Use self info for current user, otherwise use participant info
+                  const isCurrentUser = self && participant.userId === self.presence.user.id;
+                  const userEmail = isCurrentUser ? self.presence.user.email : '';
+                  const userName = isCurrentUser ? self.presence.user.name : participant.userName;
+                  const displayName = userName || userEmail || 'User';
+                  
+                  return (
+                    <div
+                      key={participant.userId}
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium ring-2 ring-white"
+                      style={{ backgroundColor: getAvatarColor(userEmail || participant.userId || '') }}
+                      title={displayName}
+                    >
+                      {displayName.charAt(0).toUpperCase()}
+                    </div>
+                  );
+                })}
                 {participants.length > 3 && (
                   <div className="w-8 h-8 rounded-full bg-gray-300 text-gray-700 flex items-center justify-center text-sm font-medium border-2 border-white">
                     +{participants.length - 3}
@@ -319,10 +337,8 @@ export function CollaborativePractice({ conversationId, documentName }: Collabor
               <Settings className="h-4 w-4" />
               Client Settings
             </button>
-            </div>
           </div>
         </div>
-        
       </header>
 
       {/* Messages Area */}
@@ -342,10 +358,17 @@ export function CollaborativePractice({ conversationId, documentName }: Collabor
                       className={`w-8 h-8 rounded-full flex items-center justify-center ${
                         isUser ? 'text-white' : 'bg-gray-300 text-gray-700'
                       }`}
-                      style={isUser ? { backgroundColor: getAvatarColor(message.userId || message.userName || session?.user?.email || '') } : {}}
+                      style={isUser ? { 
+                        backgroundColor: getAvatarColor(
+                          self?.presence.user.email || 
+                          session?.user?.email || 
+                          message.userId || 
+                          ''
+                        ) 
+                      } : {}}
                     >
                       {isUser ? (
-                        (message.userName || session?.user?.name || session?.user?.email || 'U').charAt(0).toUpperCase()
+                        (self?.presence.user.name || self?.presence.user.email || message.userName || 'U').charAt(0).toUpperCase()
                       ) : (
                         <Bot className="h-4 w-4" />
                       )}
