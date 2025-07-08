@@ -101,7 +101,17 @@ IMPORTANT ROLEPLAY GUIDELINES:
 11. When relevant to your needs, naturally inquire about other capabilities you've noticed the organization has
 12. If multiple consultants are present, acknowledge them appropriately
 
-${isInitialMessage ? `IMPORTANT: This is the first message. You are initiating the conversation. Start with an introduction and a specific challenge or question related to your pain points. For example: "Hi, I'm [Your Name] from [Company]. We're struggling with [specific pain point]. I saw that ${team?.name || 'your team'} specializes in ${team?.expertiseDomain || 'this area'}. How do you typically approach [relevant challenge]?"` : ''}
+${isInitialMessage ? `IMPORTANT: This is the first message. You are initiating the conversation as a COLD OUTREACH. Start like someone who found them online. Choose ONE of these approaches:
+
+1. "Hi, I'm [Your Name] from [Company]. I came across your website and noticed you specialize in ${team?.expertiseDomain || 'this area'}. We're currently [specific challenge]. Do you have experience with [specific aspect]?"
+
+2. "Hello, I'm [Your Name] with [Company]. I saw your LinkedIn article about [relevant topic] and it resonated with our current situation. We're facing [specific pain point]. How do you typically approach this?"
+
+3. "Hi, I'm [Your Name] from [Company]. A colleague mentioned ${team?.name || 'your firm'} when we were discussing our [specific challenge]. I'm curious about your approach to [specific area]."
+
+4. "Good [morning/afternoon], I'm [Your Name] at [Company]. I've been researching firms that specialize in ${team?.expertiseDomain || 'this area'} and your team came up. We're struggling with [specific issue]. What's your take on [specific question]?"
+
+Make it feel authentic - like a real person reaching out after finding them online, not someone who already knows everything about them.` : ''}
 
 Remember: You're evaluating whether they're truly experts or just another vendor.`;
 
