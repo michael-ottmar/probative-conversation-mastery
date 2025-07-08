@@ -32,6 +32,9 @@ Feel free to naturally inquire about or reference other teams' capabilities when
       'Startup Founder': ['Alex Kim', 'Sam Taylor', 'Jordan Martinez', 'Riley Chen', 'Casey Williams', 'Morgan Lee', 'Drew Parker', 'Avery Quinn', 'Blake Foster', 'Cameron Hughes']
     };
     
+    // Default fallback names if persona name doesn't match
+    const defaultNames = ['Chris Morgan', 'Pat Taylor', 'Jamie Brown', 'Morgan Davis', 'Casey Wilson'];
+    
     // Check if a name was already established in the conversation
     let clientName: string;
     const existingClientMessage = conversationHistory.find((msg: any) => msg.role === 'client' && msg.clientName);
@@ -41,7 +44,7 @@ Feel free to naturally inquire about or reference other teams' capabilities when
       clientName = existingClientMessage.clientName;
     } else {
       // First message from client - generate a random name
-      const namePool = clientNames[clientPersona.name] || ['Chris Morgan', 'Pat Taylor', 'Jamie Brown'];
+      const namePool = clientNames[clientPersona.name] || defaultNames;
       const nameIndex = Math.floor(Math.random() * namePool.length);
       clientName = namePool[nameIndex];
     }
@@ -141,7 +144,7 @@ Remember: You're evaluating whether they're truly experts or just another vendor
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 100, // Reduced for more concise responses
+        max_tokens: 300, // Increased to prevent cutoffs while keeping responses concise
         messages: messages.slice(1), // Remove system message for Claude format
         system: systemPrompt,
       }),
@@ -177,7 +180,7 @@ Focus on how well they're moving from vendor to expert positioning.`;
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 100,
+        max_tokens: 150, // Increased slightly for complete coaching feedback
         messages: [{
           role: 'user',
           content: coachingPrompt,
@@ -217,6 +220,9 @@ Focus on how well they're moving from vendor to expert positioning.`;
   } catch (error) {
     console.error('Error in practice conversation:', error);
     
+    // Reconstruct variables that might not exist in catch block
+    const existingClientMessage = conversationHistory?.find((msg: any) => msg.role === 'client' && msg.clientName);
+    
     // Fallback responses
     const fallbackResponses = [
       "That's interesting. Can you tell me more about how you've handled similar challenges?",
@@ -232,9 +238,13 @@ Focus on how well they're moving from vendor to expert positioning.`;
       { type: 'improvement', content: 'Focus on their business outcomes, not your service features.' },
     ];
 
+    // Use a consistent fallback name generation
+    const fallbackClientName = existingClientMessage?.clientName || 
+      (clientNames[clientPersona?.name] || defaultNames)[Math.floor(Math.random() * (clientNames[clientPersona?.name] || defaultNames).length)];
+    
     return NextResponse.json({ 
       clientResponse: fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)],
-      clientName: 'Alex Morgan', // Fallback name
+      clientName: fallbackClientName,
       coachingFeedback: fallbackCoaching[Math.floor(Math.random() * fallbackCoaching.length)],
       updatedScore: 50 // Default score in case of error
     });

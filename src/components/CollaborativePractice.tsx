@@ -351,8 +351,8 @@ export function CollaborativePractice({ conversationId, documentName }: Collabor
                 {participants.slice(0, 3).map((participant, index) => (
                   <UserAvatar
                     key={participant.userId}
-                    name={participant.userName}
-                    email={participant.userEmail}
+                    name={participant.userName || session?.user?.name}
+                    email={participant.userEmail || session?.user?.email}
                     className="ring-2 ring-white"
                   />
                 ))}
@@ -405,13 +405,19 @@ export function CollaborativePractice({ conversationId, documentName }: Collabor
                   <div className="flex items-start gap-3">
                     {isUser ? (
                       <UserAvatar
-                        name={self?.presence.user.name || message.userName}
-                        email={self?.presence.user.email || session?.user?.email}
+                        name={message.userName || self?.presence?.user?.name || session?.user?.name}
+                        email={session?.user?.email || self?.presence?.user?.email}
                       />
                     ) : (
                       <div 
-                        className="w-8 h-8 rounded-full bg-gray-300 text-gray-700 flex items-center justify-center"
-                        style={{ borderRadius: '9999px' }}
+                        className="w-8 h-8 rounded-full bg-gray-300 text-gray-700 flex items-center justify-center flex-shrink-0"
+                        style={{ 
+                          borderRadius: '9999px',
+                          minWidth: '32px',
+                          minHeight: '32px',
+                          maxWidth: '32px',
+                          maxHeight: '32px'
+                        }}
                       >
                         <Bot className="h-4 w-4" />
                       </div>
