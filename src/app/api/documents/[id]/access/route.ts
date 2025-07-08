@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import { prisma } from '@/lib/prisma';
 
-// POST /api/documents/[id]/access - Request access to a document (auto-grant viewer access via share link)
+// POST /api/documents/[id]/access - Request access to a document (auto-grant editor access via share link)
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -55,19 +55,19 @@ export async function POST(
       });
     }
 
-    // Auto-grant viewer access (since they accessed via share link)
+    // Auto-grant editor access (since they accessed via share link)
     const share = await prisma.documentShare.create({
       data: {
         documentId: params.id,
         userId: user.id,
-        role: 'viewer'
+        role: 'editor'
       }
     });
 
     return NextResponse.json({ 
       message: 'Access granted',
       hasAccess: true,
-      role: 'viewer',
+      role: 'editor',
       share 
     });
   } catch (error) {

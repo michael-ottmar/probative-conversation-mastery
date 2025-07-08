@@ -201,7 +201,7 @@ export function ShareModal({ isOpen, onClose, documentName, documentId }: ShareM
           </label>
           
           <div className="text-sm text-gray-600 mb-3">
-            Anyone with the link can view this document. They'll need to sign in with Google first.
+            Anyone with the link can edit this document. They'll need to sign in with Google first.
           </div>
 
           <div className="flex gap-2">
