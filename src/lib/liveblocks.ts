@@ -45,6 +45,7 @@ type Storage = {
     participants: Array<{
       userId: string;
       userName: string;
+      userEmail?: string;
       joinedAt: number;
     }>;
   };

@@ -9,7 +9,8 @@ export async function POST(request: NextRequest) {
       team,
       todos,
       allTeams,
-      expertiseScore 
+      expertiseScore,
+      isInitialMessage = false
     } = await request.json();
 
     // Build organization context for the AI
@@ -88,6 +89,8 @@ IMPORTANT ROLEPLAY GUIDELINES:
 10. If they sound like vendors, express skepticism
 11. When relevant to your needs, naturally inquire about other capabilities you've noticed the organization has
 12. If multiple consultants are present, acknowledge them appropriately
+
+${isInitialMessage ? `IMPORTANT: This is the first message. You are initiating the conversation. Start with an introduction and a specific challenge or question related to your pain points. For example: "Hi, I'm [Your Name] from [Company]. We're struggling with [specific pain point]. I saw that ${team?.name || 'your team'} specializes in ${team?.expertiseDomain || 'this area'}. How do you typically approach [relevant challenge]?"` : ''}
 
 Remember: You're evaluating whether they're truly experts or just another vendor.`;
 

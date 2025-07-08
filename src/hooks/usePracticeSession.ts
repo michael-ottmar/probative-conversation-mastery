@@ -50,6 +50,7 @@ export function usePracticeSession(documentId: string) {
           participants: [{
             userId: self.presence.user.id,
             userName: self.presence.user.name || 'User',
+            userEmail: self.presence.user.email,
             joinedAt: Date.now()
           }]
         });
@@ -62,6 +63,7 @@ export function usePracticeSession(documentId: string) {
           participants.push({
             userId: self.presence.user.id,
             userName: self.presence.user.name || 'User',
+            userEmail: self.presence.user.email,
             joinedAt: Date.now()
           });
         }

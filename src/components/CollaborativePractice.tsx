@@ -11,6 +11,7 @@ import { usePracticeSession } from '@/hooks/usePracticeSession';
 import { useSearchParams } from 'next/navigation';
 import { getAvatarColor } from '@/lib/avatar';
 import { useSelf } from '@/lib/liveblocks';
+import { UserAvatar } from '@/components/UserAvatar';
 
 // Default B2B persona (same as original)
 const defaultB2BPersona: ClientPersona = {
@@ -174,6 +175,46 @@ export function CollaborativePractice({ conversationId, documentName }: Collabor
     }
   }, [inputValue, isTyping, setTyping]);
 
+  const handleClientGoesFirst = async () => {
+    setIsSendingMessage(true);
+    
+    try {
+      // Get selected team and its todos
+      const selectedTeam = teams.find(t => t.id === selectedTeamId);
+      const teamTodos = todos.filter(t => t.teamId === selectedTeamId);
+      
+      // Call AI API to generate initial client message
+      const response = await fetch('/api/ai/practice-conversation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversationHistory: [],
+          userMessage: '', // Empty message to trigger initial client inquiry
+          clientPersona: clientPersona || defaultB2BPersona,
+          team: selectedTeam,
+          todos: teamTodos,
+          allTeams: teams,
+          expertiseScore,
+          isInitialMessage: true // Flag to indicate client should start
+        })
+      });
+      
+      if (response.ok) {
+        const { clientResponse } = await response.json();
+        
+        // Add AI response as first message
+        addMessage({
+          role: 'client',
+          content: clientResponse
+        });
+      }
+    } catch (error) {
+      console.error('Error generating initial client message:', error);
+    } finally {
+      setIsSendingMessage(false);
+    }
+  };
+
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isSendingMessage) return;
     
@@ -304,24 +345,14 @@ export function CollaborativePractice({ conversationId, documentName }: Collabor
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5 text-gray-600" />
               <div className="flex -space-x-2">
-                {participants.slice(0, 3).map((participant, index) => {
-                  // Use self info for current user, otherwise use participant info
-                  const isCurrentUser = self && participant.userId === self.presence.user.id;
-                  const userEmail = isCurrentUser ? self.presence.user.email : '';
-                  const userName = isCurrentUser ? self.presence.user.name : participant.userName;
-                  const displayName = userName || userEmail || 'User';
-                  
-                  return (
-                    <div
-                      key={participant.userId}
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium ring-2 ring-white"
-                      style={{ backgroundColor: getAvatarColor(userEmail || participant.userId || '') }}
-                      title={displayName}
-                    >
-                      {displayName.charAt(0).toUpperCase()}
-                    </div>
-                  );
-                })}
+                {participants.slice(0, 3).map((participant, index) => (
+                  <UserAvatar
+                    key={participant.userId}
+                    name={participant.userName}
+                    email={participant.userEmail}
+                    className="ring-2 ring-white"
+                  />
+                ))}
                 {participants.length > 3 && (
                   <div className="w-8 h-8 rounded-full bg-gray-300 text-gray-700 flex items-center justify-center text-sm font-medium border-2 border-white">
                     +{participants.length - 3}
@@ -344,6 +375,21 @@ export function CollaborativePractice({ conversationId, documentName }: Collabor
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto px-6 py-4">
         <div className="max-w-4xl mx-auto space-y-4">
+          {/* Client Goes First Button - Show when no messages */}
+          {messages.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-12">
+              <p className="text-gray-600 mb-4">Start a practice conversation</p>
+              <button
+                onClick={() => handleClientGoesFirst()}
+                className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+              >
+                <Bot className="h-5 w-5" />
+                Let the client start
+              </button>
+              <p className="text-sm text-gray-500 mt-2">or type your message below</p>
+            </div>
+          )}
+          
           {messages.map((message, index) => {
             const isUser = message.role === 'user';
             const relatedNotes = coachingNotes.filter(note => 
@@ -354,25 +400,16 @@ export function CollaborativePractice({ conversationId, documentName }: Collabor
               <div key={message.id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-2xl ${isUser ? 'order-2' : ''}`}>
                   <div className="flex items-start gap-3">
-                    <div 
-                      className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        isUser ? 'text-white' : 'bg-gray-300 text-gray-700'
-                      }`}
-                      style={isUser ? { 
-                        backgroundColor: getAvatarColor(
-                          self?.presence.user.email || 
-                          session?.user?.email || 
-                          message.userId || 
-                          ''
-                        ) 
-                      } : {}}
-                    >
-                      {isUser ? (
-                        (self?.presence.user.name || self?.presence.user.email || message.userName || 'U').charAt(0).toUpperCase()
-                      ) : (
+                    {isUser ? (
+                      <UserAvatar
+                        name={self?.presence.user.name || message.userName}
+                        email={self?.presence.user.email || session?.user?.email}
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-gray-300 text-gray-700 flex items-center justify-center">
                         <Bot className="h-4 w-4" />
-                      )}
-                    </div>
+                      </div>
+                    )}
                     <div>
                       {isUser && message.userName && (
                         <div className="text-sm text-gray-600 mb-1">{message.userName}</div>

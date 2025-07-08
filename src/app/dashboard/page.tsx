@@ -7,6 +7,7 @@ import { Plus } from 'lucide-react';
 import { DocumentCard } from '@/components/DocumentCard';
 import { ShareModal } from '@/components/ShareModal';
 import { getAvatarColor } from '@/lib/avatar';
+import { UserAvatar } from '@/components/UserAvatar';
 
 interface Document {
   id: string;
@@ -185,12 +186,10 @@ export default function Dashboard() {
                 New Document
               </button>
               <div className="flex items-center gap-2">
-                <div 
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium"
-                  style={{ backgroundColor: getAvatarColor(session?.user?.email || '') }}
-                >
-                  {session?.user?.name?.charAt(0) || session?.user?.email?.charAt(0) || 'U'}
-                </div>
+                <UserAvatar
+                  name={session?.user?.name}
+                  email={session?.user?.email}
+                />
               </div>
               <button 
                 onClick={() => signOut()}
