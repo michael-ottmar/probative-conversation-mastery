@@ -192,7 +192,7 @@ export default function Dashboard() {
                 />
               </div>
               <button 
-                onClick={() => signOut()}
+                onClick={() => signOut({ callbackUrl: '/' })}
                 className="text-sm text-gray-600 hover:text-gray-900"
               >
                 Sign Out

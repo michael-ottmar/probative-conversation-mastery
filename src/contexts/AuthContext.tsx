@@ -20,7 +20,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user: session?.user || null,
       loading: status === "loading",
       signIn: () => signIn('google'),
-      signOut: () => signOut(),
+      signOut: () => signOut({ callbackUrl: '/' }),
     }}>
       {children}
     </AuthContext.Provider>
