@@ -131,12 +131,22 @@ Remember: You're evaluating whether they're truly experts or just another vendor
       ...conversationHistory.map((msg: any) => ({
         role: msg.role === 'user' ? 'assistant' : 'user',
         content: msg.content
-      })),
-      {
+      }))
+    ];
+    
+    // Only add user message if it's not an initial message or if there's content
+    if (!isInitialMessage || userMessage) {
+      messages.push({
         role: 'user',
         content: userMessage
-      }
-    ];
+      });
+    } else {
+      // For initial message, add a prompt to start the conversation
+      messages.push({
+        role: 'user',
+        content: 'Please introduce yourself and start the conversation as outlined in your roleplay guidelines.'
+      });
+    }
 
     // Call Anthropic API
     const anthropicResponse = await fetch('https://api.anthropic.com/v1/messages', {
@@ -155,7 +165,9 @@ Remember: You're evaluating whether they're truly experts or just another vendor
     });
 
     if (!anthropicResponse.ok) {
-      throw new Error('Failed to generate client response');
+      const errorData = await anthropicResponse.text();
+      console.error('Anthropic API error:', anthropicResponse.status, errorData);
+      throw new Error(`Failed to generate client response: ${anthropicResponse.status} ${errorData}`);
     }
 
     const data = await anthropicResponse.json();
@@ -223,6 +235,12 @@ Focus on how well they're moving from vendor to expert positioning.`;
     });
   } catch (error) {
     console.error('Error in practice conversation:', error);
+    console.error('Request details:', {
+      hasConversationHistory: !!conversationHistory,
+      conversationLength: conversationHistory?.length || 0,
+      hasClientPersona: !!clientPersona,
+      personaName: clientPersona?.name
+    });
     
     // Reconstruct variables that might not exist in catch block
     const existingClientMessage = conversationHistory?.find((msg: any) => msg.role === 'client' && msg.clientName);
