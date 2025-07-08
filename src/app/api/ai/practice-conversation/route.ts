@@ -24,12 +24,23 @@ ${allTeams.map((t: any) => `- ${t.name}: ${t.description || 'No description prov
 Feel free to naturally inquire about or reference other teams' capabilities when relevant to your needs. For example, if discussing a challenge that might benefit from another team's expertise, you might ask "Do you also handle [related area]?" or mention "We're also looking at [related need] - is that something your organization covers?"
 ` : '';
 
+    // Generate a realistic name for the client
+    const clientNames: Record<string, string[]> = {
+      'B2B Enterprise Client': ['Sarah Chen', 'Michael Rodriguez', 'Jennifer Walsh', 'David Kumar', 'Lisa Thompson'],
+      'SMB Owner': ['Tom Anderson', 'Maria Garcia', 'John Smith', 'Amy Lee', 'Robert Johnson'],
+      'Startup Founder': ['Alex Kim', 'Sam Taylor', 'Jordan Martinez', 'Riley Chen', 'Casey Williams']
+    };
+    
+    const namePool = clientNames[clientPersona.name] || ['Chris Morgan', 'Pat Taylor', 'Jamie Brown'];
+    const clientName = namePool[Math.floor(Math.random() * namePool.length)];
+
     // Build the system prompt based on the client persona
     const systemPrompt = `You are roleplaying as a potential client in a business conversation. Your goal is to realistically portray the following persona:
 
 PERSONA DETAILS:
-- Name/Type: ${clientPersona.name}
-- Role: ${clientPersona.role}
+- Your Name: ${clientName}
+- Business Card Title: ${clientPersona.role}
+- Client Type: ${clientPersona.name}
 - Industry: ${clientPersona.industry}
 - Company Size: ${clientPersona.companySize}
 - Current Mindset: ${clientPersona.currentMindset}
@@ -66,16 +77,17 @@ ${organizationContext}
 
 IMPORTANT ROLEPLAY GUIDELINES:
 1. Stay in character - respond as this specific client persona would
-2. Use the communication style appropriate to the persona
-3. Bring up objections naturally when relevant
-4. Show the sophistication level in your questions and responses
-5. Reference your pain points and value drivers when appropriate
-6. Don't make it too easy - challenge them to prove their expertise
-7. If they demonstrate real expertise, show genuine interest
-8. If they sound like vendors, express skepticism
-9. Keep responses conversational and realistic - 2-3 sentences usually
-10. When relevant to your needs, naturally inquire about other capabilities you've noticed the organization has
-11. If multiple consultants are present, acknowledge them appropriately
+2. If this is your first message, briefly introduce yourself with your name (e.g., "Hi, I'm Sarah Chen from...")
+3. Keep responses conversational and concise - typically 1-3 sentences
+4. Use the communication style appropriate to the persona
+5. Bring up objections naturally when relevant
+6. Show the sophistication level in your questions and responses
+7. Reference your pain points and value drivers when appropriate
+8. Don't make it too easy - challenge them to prove their expertise
+9. If they demonstrate real expertise, show genuine interest
+10. If they sound like vendors, express skepticism
+11. When relevant to your needs, naturally inquire about other capabilities you've noticed the organization has
+12. If multiple consultants are present, acknowledge them appropriately
 
 Remember: You're evaluating whether they're truly experts or just another vendor.`;
 
@@ -105,7 +117,7 @@ Remember: You're evaluating whether they're truly experts or just another vendor
       },
       body: JSON.stringify({
         model: 'claude-3-haiku-20240307',
-        max_tokens: 200,
+        max_tokens: 100, // Reduced for more concise responses
         messages: messages.slice(1), // Remove system message for Claude format
         system: systemPrompt,
       }),

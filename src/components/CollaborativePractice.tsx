@@ -183,7 +183,7 @@ export function CollaborativePractice({ conversationId, documentName }: Collabor
     addMessage({
       role: 'user',
       content: userMessage,
-      userName: session?.user?.name || 'User',
+      userName: session?.user?.name || session?.user?.email?.split('@')[0] || 'User',
       userId: session?.user?.id
     });
     
@@ -259,19 +259,36 @@ export function CollaborativePractice({ conversationId, documentName }: Collabor
     <div className="h-screen flex flex-col bg-gray-50">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link
-              href={`/conversation/${conversationId}`}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
-            >
-              <ArrowLeft className="h-5 w-5" />
-              Back to {documentName}
-            </Link>
-            <h1 className="text-xl font-semibold">Practice Conversation</h1>
-          </div>
-          
-          <div className="flex items-center gap-4">
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-4">
+              <Link
+                href={`/conversation/${conversationId}`}
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+              >
+                <ArrowLeft className="h-5 w-5" />
+                Back to {documentName}
+              </Link>
+              <h1 className="text-xl font-semibold">Practice Conversation</h1>
+              
+              {/* Team and Client Info */}
+              <div className="flex items-center gap-4 text-sm text-gray-600">
+                {selectedTeamId && teams.length > 0 && (
+                  <div className="flex items-center gap-1">
+                    <span className="font-medium">Team:</span>
+                    <span className="text-gray-900">{teams.find(t => t.id === selectedTeamId)?.name || 'Unknown'}</span>
+                  </div>
+                )}
+                {clientPersona && (
+                  <div className="flex items-center gap-1">
+                    <span className="font-medium">Client:</span>
+                    <span className="text-gray-900">{clientPersona.name}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-4">
             {/* Participants */}
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5 text-gray-600" />
@@ -282,7 +299,19 @@ export function CollaborativePractice({ conversationId, documentName }: Collabor
                     className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center text-sm font-medium border-2 border-white"
                     title={participant.userName || 'User'}
                   >
-                    {(participant.userName?.[0] || 'U').toUpperCase()}
+                    {(() => {
+                      const name = participant.userName || '';
+                      if (name.includes(' ')) {
+                        // Get first letter of first and last name
+                        return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+                      } else if (name.includes('@')) {
+                        // Email address - use first two letters
+                        return name.split('@')[0].slice(0, 2).toUpperCase();
+                      } else {
+                        // Single word name or fallback
+                        return (name.slice(0, 2) || 'U').toUpperCase();
+                      }
+                    })()}
                   </div>
                 ))}
                 {participants.length > 3 && (
@@ -300,6 +329,7 @@ export function CollaborativePractice({ conversationId, documentName }: Collabor
               <Settings className="h-4 w-4" />
               Client Settings
             </button>
+            </div>
           </div>
         </div>
         
