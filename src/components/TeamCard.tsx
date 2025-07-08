@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Users } from 'lucide-react';
 import { Team } from '@/lib/types';
 
@@ -21,6 +21,13 @@ export function TeamCard({ team, isSelected, onSelect, onUpdate, onDelete }: Tea
   const [editedName, setEditedName] = useState(team.name);
   const [editedLeaders, setEditedLeaders] = useState(team.leaders);
   const [editedDescription, setEditedDescription] = useState(team.description || '');
+
+  // Update state when team prop changes
+  useEffect(() => {
+    setEditedName(team.name);
+    setEditedLeaders(team.leaders);
+    setEditedDescription(team.description || '');
+  }, [team.id, team.name, team.leaders, team.description]);
 
   const handleNameSave = () => {
     if (editedName.trim() && editedName !== team.name) {

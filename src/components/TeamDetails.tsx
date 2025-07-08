@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Team } from '@/lib/types';
 
 interface TeamDetailsProps {
@@ -17,6 +17,13 @@ export function TeamDetails({ team, onUpdate, readOnly = false }: TeamDetailsPro
   const [editedName, setEditedName] = useState(team.name);
   const [editedDescription, setEditedDescription] = useState(team.description || '');
   const [editedLeaders, setEditedLeaders] = useState(team.leaders);
+
+  // Update state when team prop changes
+  useEffect(() => {
+    setEditedName(team.name);
+    setEditedDescription(team.description || '');
+    setEditedLeaders(team.leaders);
+  }, [team.id, team.name, team.description, team.leaders]);
 
   const handleNameSave = () => {
     if (editedName.trim() && editedName !== team.name) {
