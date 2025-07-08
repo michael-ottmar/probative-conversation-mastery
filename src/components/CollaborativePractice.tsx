@@ -302,8 +302,8 @@ export function CollaborativePractice({ conversationId, documentName }: Collabor
 
   if (isLoadingData) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Loading practice session...</div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-lg">Loading...</div>
       </div>
     );
   }
@@ -388,20 +388,22 @@ export function CollaborativePractice({ conversationId, documentName }: Collabor
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12">
               <p className="text-gray-600 mb-4">Start a practice conversation</p>
-              <button
-                onClick={() => setShowPersonaSettings(true)}
-                className="px-6 py-3 mb-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-              >
-                <User className="h-5 w-5" />
-                Select client
-              </button>
-              <button
-                onClick={() => handleClientGoesFirst()}
-                className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
-              >
-                <Bot className="h-5 w-5" />
-                Let the client start
-              </button>
+              <div className="w-64 space-y-3">
+                <button
+                  onClick={() => setShowPersonaSettings(true)}
+                  className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                >
+                  <User className="h-5 w-5" />
+                  Select client
+                </button>
+                <button
+                  onClick={() => handleClientGoesFirst()}
+                  className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+                >
+                  <Bot className="h-5 w-5" />
+                  Let the client start
+                </button>
+              </div>
               <p className="text-sm text-gray-500 mt-2">or type your message below</p>
             </div>
           )}
