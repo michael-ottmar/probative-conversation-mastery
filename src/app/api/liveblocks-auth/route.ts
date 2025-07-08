@@ -43,7 +43,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user has access to this document/room
-    const documentId = room; // Room ID is the document ID
+    // Handle practice rooms which have format "practice-{documentId}"
+    let documentId = room;
+    if (room.startsWith('practice-')) {
+      documentId = room.replace('practice-', '');
+    }
+    
     const document = await prisma.document.findFirst({
       where: {
         id: documentId,
@@ -78,8 +83,8 @@ export async function POST(request: NextRequest) {
     });
 
     // Use a naming pattern to allow access to rooms with wildcards
-    // e.g. Giving the user read access on all rooms starting with `document-`
-    liveblocksSession.allow(documentId, canWrite ? 
+    // Grant access to the original room ID (not the extracted documentId)
+    liveblocksSession.allow(room, canWrite ? 
       liveblocksSession.FULL_ACCESS : 
       liveblocksSession.READ_ACCESS
     );
