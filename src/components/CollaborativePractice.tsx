@@ -89,6 +89,7 @@ export function CollaborativePractice({ conversationId, documentName }: Collabor
   const [selectedTeamId, setSelectedTeamId] = useState<string>(teamFromUrl || '');
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const [isAITyping, setIsAITyping] = useState(false);
 
   // Initialize session on mount
   useEffect(() => {
@@ -177,6 +178,7 @@ export function CollaborativePractice({ conversationId, documentName }: Collabor
 
   const handleClientGoesFirst = async () => {
     setIsSendingMessage(true);
+    setIsAITyping(true);
     
     try {
       // Get selected team and its todos
@@ -213,6 +215,7 @@ export function CollaborativePractice({ conversationId, documentName }: Collabor
       console.error('Error generating initial client message:', error);
     } finally {
       setIsSendingMessage(false);
+      setIsAITyping(false);
     }
   };
 
@@ -231,6 +234,8 @@ export function CollaborativePractice({ conversationId, documentName }: Collabor
       userName: session?.user?.name || session?.user?.email?.split('@')[0] || 'User',
       userId: session?.user?.id
     });
+    
+    setIsAITyping(true);
     
     try {
       // Get selected team and its todos
@@ -286,6 +291,7 @@ export function CollaborativePractice({ conversationId, documentName }: Collabor
       console.error('Error sending message:', error);
     } finally {
       setIsSendingMessage(false);
+      setIsAITyping(false);
     }
   };
 
@@ -383,6 +389,13 @@ export function CollaborativePractice({ conversationId, documentName }: Collabor
             <div className="flex flex-col items-center justify-center py-12">
               <p className="text-gray-600 mb-4">Start a practice conversation</p>
               <button
+                onClick={() => setShowPersonaSettings(true)}
+                className="px-6 py-3 mb-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+              >
+                <User className="h-5 w-5" />
+                Select client
+              </button>
+              <button
                 onClick={() => handleClientGoesFirst()}
                 className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
               >
@@ -453,11 +466,28 @@ export function CollaborativePractice({ conversationId, documentName }: Collabor
             );
           })}
           
-          {/* Typing Indicator */}
+          {/* Typing Indicators */}
           {typingUsers.length > 0 && (
             <div className="flex justify-start">
               <div className="text-sm text-gray-500 italic">
                 {typingUsers.join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...
+              </div>
+            </div>
+          )}
+          
+          {/* AI Typing Indicator */}
+          {isAITyping && (
+            <div className="flex justify-start">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-gray-300 text-gray-700 flex items-center justify-center flex-shrink-0" style={{ minWidth: '32px', minHeight: '32px', maxWidth: '32px', maxHeight: '32px', borderRadius: '9999px' }}>
+                  <Bot className="h-4 w-4" />
+                </div>
+                <div className="bg-white border border-gray-200 px-4 py-2 rounded-lg">
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm text-gray-600">{clientPersona?.name ? (messages.find(m => m.role === 'client')?.clientName || 'AI Client') : 'AI Client'} is typing</span>
+                    <span className="animate-pulse">...</span>
+                  </div>
+                </div>
               </div>
             </div>
           )}
