@@ -3,12 +3,26 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(request: NextRequest) {
   try {
     const { 
-      message, 
       conversationHistory, 
+      userMessage,
       clientPersona, 
-      teamContext, 
-      practiceSettings 
+      team,
+      todos,
+      allTeams,
+      expertiseScore 
     } = await request.json();
+
+    // Build organization context for the AI
+    const organizationContext = allTeams ? `
+ORGANIZATION CONTEXT:
+Your company is working with ${allTeams.find((t: any) => t.isRoot)?.name || 'this organization'} which has multiple specialized teams:
+
+${allTeams.map((t: any) => `- ${t.name}: ${t.description || 'No description provided'}
+  Led by: ${t.leaders || 'Not specified'}
+  Expertise: ${t.expertiseDomain || 'General'}`).join('\n')}
+
+Feel free to naturally inquire about or reference other teams' capabilities when relevant to your needs. For example, if discussing a challenge that might benefit from another team's expertise, you might ask "Do you also handle [related area]?" or mention "We're also looking at [related need] - is that something your organization covers?"
+` : '';
 
     // Build the system prompt based on the client persona
     const systemPrompt = `You are roleplaying as a potential client in a business conversation. Your goal is to realistically portray the following persona:
@@ -42,10 +56,13 @@ ${clientPersona.customPrompt ? `ADDITIONAL CONTEXT: ${clientPersona.customPrompt
 CONVERSATION CONTEXT:
 The consultant is trying to demonstrate their expertise and move from being seen as a vendor to being seen as an expert. They should be using probative conversation techniques.
 
-Team Context:
-${teamContext ? `- Team: ${teamContext.teamName}
-- Description: ${teamContext.teamDescription}
-- Leaders: ${teamContext.teamLeaders}` : 'Not provided'}
+Current Team Context:
+${team ? `- Team: ${team.name}
+- Description: ${team.description}
+- Leaders: ${team.leaders}
+- Expertise Domain: ${team.expertiseDomain || 'Not specified'}` : 'Not provided'}
+
+${organizationContext}
 
 IMPORTANT ROLEPLAY GUIDELINES:
 1. Stay in character - respond as this specific client persona would
@@ -57,6 +74,8 @@ IMPORTANT ROLEPLAY GUIDELINES:
 7. If they demonstrate real expertise, show genuine interest
 8. If they sound like vendors, express skepticism
 9. Keep responses conversational and realistic - 2-3 sentences usually
+10. When relevant to your needs, naturally inquire about other capabilities you've noticed the organization has
+11. If multiple consultants are present, acknowledge them appropriately
 
 Remember: You're evaluating whether they're truly experts or just another vendor.`;
 
@@ -72,7 +91,7 @@ Remember: You're evaluating whether they're truly experts or just another vendor
       })),
       {
         role: 'user',
-        content: message
+        content: userMessage
       }
     ];
 
@@ -102,7 +121,7 @@ Remember: You're evaluating whether they're truly experts or just another vendor
     // Generate coaching feedback based on the user's message
     const coachingPrompt = `As a sales expertise coach familiar with Blair Enns' "Win Without Pitching" methodology, analyze this message from a consultant and provide brief, actionable coaching feedback.
 
-Consultant's message: "${message}"
+Consultant's message: "${userMessage}"
 
 Context: They're in a probative conversation trying to demonstrate expertise to a ${clientPersona.name} (${clientPersona.sophisticationLevel} sophistication).
 
@@ -130,7 +149,9 @@ Focus on how well they're moving from vendor to expert positioning.`;
       }),
     });
 
-    let coachingNote = null;
+    let coachingFeedback = null;
+    let updatedScore = expertiseScore;
+    
     if (coachingResponse.ok) {
       const coachingData = await coachingResponse.json();
       const feedback = coachingData.content[0]?.text;
@@ -139,11 +160,13 @@ Focus on how well they're moving from vendor to expert positioning.`;
       let type: 'strength' | 'improvement' | 'insight' = 'insight';
       if (feedback?.toLowerCase().includes('well done') || feedback?.toLowerCase().includes('excellent') || feedback?.toLowerCase().includes('strong')) {
         type = 'strength';
+        updatedScore = Math.min(100, expertiseScore + 5); // Increase score for strengths
       } else if (feedback?.toLowerCase().includes('instead') || feedback?.toLowerCase().includes('try') || feedback?.toLowerCase().includes('consider')) {
         type = 'improvement';
+        updatedScore = Math.max(0, expertiseScore - 2); // Slight decrease for improvements needed
       }
 
-      coachingNote = {
+      coachingFeedback = {
         type,
         content: feedback || 'Keep focusing on demonstrating your unique expertise.',
       };
@@ -151,7 +174,8 @@ Focus on how well they're moving from vendor to expert positioning.`;
 
     return NextResponse.json({ 
       clientResponse,
-      coachingNote 
+      coachingFeedback,
+      updatedScore 
     });
   } catch (error) {
     console.error('Error in practice conversation:', error);
@@ -173,7 +197,8 @@ Focus on how well they're moving from vendor to expert positioning.`;
 
     return NextResponse.json({ 
       clientResponse: fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)],
-      coachingNote: fallbackCoaching[Math.floor(Math.random() * fallbackCoaching.length)]
+      coachingFeedback: fallbackCoaching[Math.floor(Math.random() * fallbackCoaching.length)],
+      updatedScore: 50 // Default score in case of error
     });
   }
 }

@@ -18,11 +18,36 @@ type Presence = {
     email: string;
     color: string;
   };
+  isTypingInPractice?: boolean;
 };
 
-// Optionally, Storage represents the shared document state
+// Storage represents the shared document state
 type Storage = {
-  // We'll add storage types if needed for real-time document sync
+  practiceSession?: {
+    messages: Array<{
+      id: string;
+      role: 'user' | 'client';
+      content: string;
+      userName?: string;
+      userId?: string;
+      timestamp: number;
+    }>;
+    clientPersona: any; // ClientPersona type
+    coachingNotes: Array<{
+      id: string;
+      messageId: string;
+      type: 'strength' | 'improvement' | 'insight';
+      content: string;
+      timestamp: number;
+    }>;
+    expertiseScore: number;
+    isActive: boolean;
+    participants: Array<{
+      userId: string;
+      userName: string;
+      joinedAt: number;
+    }>;
+  };
 };
 
 // Optionally, UserMeta represents static/readonly metadata on each user, as
@@ -37,12 +62,25 @@ type UserMeta = {
   };
 };
 
-// Optionally, the type of custom events broadcast and listened to in this
-// room. Use a union for multiple events. Must be JSON-serializable.
-type RoomEvent = {
-  type: 'NOTIFICATION';
-  message: string;
-};
+// Custom events broadcast and listened to in this room
+type RoomEvent = 
+  | {
+      type: 'NOTIFICATION';
+      message: string;
+    }
+  | {
+      type: 'PRACTICE_TYPING';
+      userName: string;
+      isTyping: boolean;
+    }
+  | {
+      type: 'PRACTICE_USER_JOINED';
+      userName: string;
+    }
+  | {
+      type: 'PRACTICE_USER_LEFT';
+      userName: string;
+    };
 
 // Optionally, when using Comments, ThreadMetadata represents metadata on
 // each thread. Can only contain booleans, strings, and numbers.
