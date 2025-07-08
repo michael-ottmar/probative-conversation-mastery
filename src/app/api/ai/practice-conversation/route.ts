@@ -25,15 +25,19 @@ ${allTeams.map((t: any) => `- ${t.name}: ${t.description || 'No description prov
 Feel free to naturally inquire about or reference other teams' capabilities when relevant to your needs. For example, if discussing a challenge that might benefit from another team's expertise, you might ask "Do you also handle [related area]?" or mention "We're also looking at [related need] - is that something your organization covers?"
 ` : '';
 
-    // Generate a realistic name for the client
+    // Generate a realistic name for the client - use timestamp to ensure uniqueness per conversation
     const clientNames: Record<string, string[]> = {
-      'B2B Enterprise Client': ['Sarah Chen', 'Michael Rodriguez', 'Jennifer Walsh', 'David Kumar', 'Lisa Thompson'],
-      'SMB Owner': ['Tom Anderson', 'Maria Garcia', 'John Smith', 'Amy Lee', 'Robert Johnson'],
-      'Startup Founder': ['Alex Kim', 'Sam Taylor', 'Jordan Martinez', 'Riley Chen', 'Casey Williams']
+      'B2B Enterprise Client': ['Sarah Chen', 'Michael Rodriguez', 'Jennifer Walsh', 'David Kumar', 'Lisa Thompson', 'Robert Kim', 'Emily Davis', 'James Wilson', 'Patricia Moore', 'Daniel Taylor'],
+      'SMB Owner': ['Tom Anderson', 'Maria Garcia', 'John Smith', 'Amy Lee', 'Robert Johnson', 'Susan Martinez', 'William Brown', 'Linda Davis', 'Richard Miller', 'Barbara Wilson'],
+      'Startup Founder': ['Alex Kim', 'Sam Taylor', 'Jordan Martinez', 'Riley Chen', 'Casey Williams', 'Morgan Lee', 'Drew Parker', 'Avery Quinn', 'Blake Foster', 'Cameron Hughes']
     };
     
     const namePool = clientNames[clientPersona.name] || ['Chris Morgan', 'Pat Taylor', 'Jamie Brown'];
-    const clientName = namePool[Math.floor(Math.random() * namePool.length)];
+    // Use conversation history length as a seed for consistent name within conversation
+    const nameIndex = conversationHistory.length === 0 
+      ? Math.floor(Math.random() * namePool.length)
+      : conversationHistory.length % namePool.length;
+    const clientName = namePool[nameIndex];
 
     // Build the system prompt based on the client persona
     const systemPrompt = `You are roleplaying as a potential client in a business conversation. Your goal is to realistically portray the following persona:
@@ -119,7 +123,7 @@ Remember: You're evaluating whether they're truly experts or just another vendor
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-3-haiku-20240307',
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 100, // Reduced for more concise responses
         messages: messages.slice(1), // Remove system message for Claude format
         system: systemPrompt,
@@ -155,7 +159,7 @@ Focus on how well they're moving from vendor to expert positioning.`;
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-3-haiku-20240307',
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 100,
         messages: [{
           role: 'user',
@@ -189,6 +193,7 @@ Focus on how well they're moving from vendor to expert positioning.`;
 
     return NextResponse.json({ 
       clientResponse,
+      clientName,
       coachingFeedback,
       updatedScore 
     });
@@ -212,6 +217,7 @@ Focus on how well they're moving from vendor to expert positioning.`;
 
     return NextResponse.json({ 
       clientResponse: fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)],
+      clientName: 'Alex Morgan', // Fallback name
       coachingFeedback: fallbackCoaching[Math.floor(Math.random() * fallbackCoaching.length)],
       updatedScore: 50 // Default score in case of error
     });

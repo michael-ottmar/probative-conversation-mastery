@@ -200,12 +200,13 @@ export function CollaborativePractice({ conversationId, documentName }: Collabor
       });
       
       if (response.ok) {
-        const { clientResponse } = await response.json();
+        const { clientResponse, clientName } = await response.json();
         
         // Add AI response as first message
         addMessage({
           role: 'client',
-          content: clientResponse
+          content: clientResponse,
+          clientName
         });
       }
     } catch (error) {
@@ -255,12 +256,13 @@ export function CollaborativePractice({ conversationId, documentName }: Collabor
       });
       
       if (response.ok) {
-        const { clientResponse, coachingFeedback, updatedScore } = await response.json();
+        const { clientResponse, clientName, coachingFeedback, updatedScore } = await response.json();
         
         // Add AI response
         addMessage({
           role: 'client',
-          content: clientResponse
+          content: clientResponse,
+          clientName
         });
         
         // Add coaching note if provided
@@ -411,8 +413,10 @@ export function CollaborativePractice({ conversationId, documentName }: Collabor
                       </div>
                     )}
                     <div>
-                      {isUser && message.userName && (
-                        <div className="text-sm text-gray-600 mb-1">{message.userName}</div>
+                      {((isUser && message.userName) || (!isUser && message.clientName)) && (
+                        <div className="text-sm text-gray-600 mb-1">
+                          {isUser ? message.userName : message.clientName}
+                        </div>
                       )}
                       <div className={`px-4 py-2 rounded-lg ${
                         isUser 
