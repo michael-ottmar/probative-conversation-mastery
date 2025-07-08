@@ -9,6 +9,7 @@ import { Message, CoachingNote, ClientPersona, Team, ConversationTodo } from '@/
 import { ClientPersonaSettings } from '@/components/ClientPersonaSettings';
 import { usePracticeSession } from '@/hooks/usePracticeSession';
 import { useSearchParams } from 'next/navigation';
+import { getAvatarColor } from '@/lib/avatar';
 
 // Default B2B persona (same as original)
 const defaultB2BPersona: ClientPersona = {
@@ -296,22 +297,11 @@ export function CollaborativePractice({ conversationId, documentName }: Collabor
                 {participants.slice(0, 3).map((participant, index) => (
                   <div
                     key={participant.userId}
-                    className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center text-sm font-medium border-2 border-white"
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium ring-2 ring-white"
+                    style={{ backgroundColor: getAvatarColor(participant.userId || participant.userName || '') }}
                     title={participant.userName || 'User'}
                   >
-                    {(() => {
-                      const name = participant.userName || '';
-                      if (name.includes(' ')) {
-                        // Get first letter of first and last name
-                        return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
-                      } else if (name.includes('@')) {
-                        // Email address - use first two letters
-                        return name.split('@')[0].slice(0, 2).toUpperCase();
-                      } else {
-                        // Single word name or fallback
-                        return (name.slice(0, 2) || 'U').toUpperCase();
-                      }
-                    })()}
+                    {(participant.userName || 'U').charAt(0).toUpperCase()}
                   </div>
                 ))}
                 {participants.length > 3 && (
@@ -333,17 +323,6 @@ export function CollaborativePractice({ conversationId, documentName }: Collabor
           </div>
         </div>
         
-        {/* Expertise Score */}
-        <div className="mt-2 flex items-center gap-2">
-          <span className="text-sm text-gray-600">Expertise Score:</span>
-          <div className="flex-1 max-w-xs bg-gray-200 rounded-full h-2">
-            <div
-              className="bg-green-500 h-2 rounded-full transition-all duration-500"
-              style={{ width: `${expertiseScore}%` }}
-            />
-          </div>
-          <span className="text-sm font-medium">{expertiseScore}%</span>
-        </div>
       </header>
 
       {/* Messages Area */}
@@ -359,10 +338,17 @@ export function CollaborativePractice({ conversationId, documentName }: Collabor
               <div key={message.id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-2xl ${isUser ? 'order-2' : ''}`}>
                   <div className="flex items-start gap-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      isUser ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-700'
-                    }`}>
-                      {isUser ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
+                    <div 
+                      className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                        isUser ? 'text-white' : 'bg-gray-300 text-gray-700'
+                      }`}
+                      style={isUser ? { backgroundColor: getAvatarColor(message.userId || message.userName || session?.user?.email || '') } : {}}
+                    >
+                      {isUser ? (
+                        (message.userName || session?.user?.name || session?.user?.email || 'U').charAt(0).toUpperCase()
+                      ) : (
+                        <Bot className="h-4 w-4" />
+                      )}
                     </div>
                     <div>
                       {isUser && message.userName && (
