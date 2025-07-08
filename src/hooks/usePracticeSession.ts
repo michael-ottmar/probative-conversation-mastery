@@ -18,6 +18,7 @@ interface PracticeMessage {
   content: string;
   userName?: string;
   userId?: string;
+  clientName?: string;
   timestamp: number;
 }
 

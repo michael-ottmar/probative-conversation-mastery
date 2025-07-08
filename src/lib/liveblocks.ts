@@ -30,6 +30,7 @@ type Storage = {
       content: string;
       userName?: string;
       userId?: string;
+      clientName?: string;
       timestamp: number;
     }>;
     clientPersona: any; // ClientPersona type
